@@ -62,8 +62,8 @@ export const Contact = () => (
 
         <div className="mt-12 text-center">
           <p className="text-gray-400 mb-4">Or reach us directly</p>
-          <a href="mailto:hello@nebula.com" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-            hello@nebula.com
+          <a href="mailto:hello@thrive.com" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+            hello@thrive.com
           </a>
         </div>
       </motion.div>

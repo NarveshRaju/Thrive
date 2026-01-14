@@ -12,10 +12,10 @@ export const Footer = () => (
             <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold">NEBULA</span>
+            <span className="text-xl font-bold">Thrive</span>
           </div>
           <p className="text-sm text-gray-400">
-            Building the future of creative technology
+            Your AI-powered career mentor
           </p>
         </div>
         
@@ -54,7 +54,7 @@ export const Footer = () => (
       </div>
 
       <div className="pt-8 border-t border-white/5 text-center text-sm text-gray-500">
-        © 2026 Nebula. All rights reserved.
+        © 2026 Thrive. All rights reserved.
       </div>
     </Container>
   </footer>
