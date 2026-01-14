@@ -7,11 +7,11 @@
 ---
 
 ## 📽️ Project Vision
-Thrive is not just another productivity tool. [cite_start]It is a **cinematic career OS** designed to filter the noise of the digital professional landscape into actionable clarity[cite: 14, 207]. [cite_start]Built with a **Hybrid State of Mind**, it bridges the gap between ambition and achievement through high-fidelity data and intuitive motion design[cite: 92, 100].
+Thrive is not just another productivity tool. [cite_start]It is a **cinematic career OS** designed to filter the noise of the digital professional landscape into actionable clarity[cite: 14, 207]. [cite_start]Built with a **Hybrid State of Mind**, it bridges the gap between ambition and achievement through high-fidelity data and intuitive motion design.
 
-* [cite_start]**Calm Intelligence**: Navigating the future of work with precision[cite: 207].
-* [cite_start]**Momentum-Driven**: Turning skill gaps into clear learning paths[cite: 138, 115].
-* [cite_start]**Cinematic Aesthetic**: High-end Glass UI inspired by modern fintech and aerospace cockpits[cite: 132, 114].
+* **Calm Intelligence**: Navigating the future of work with precision.
+* **Momentum-Driven**: Turning skill gaps into clear learning paths.
+* **Cinematic Aesthetic**: High-end Glass UI inspired by modern fintech and aerospace cockpits.
 
 ---
 
@@ -19,11 +19,11 @@ Thrive is not just another productivity tool. [cite_start]It is a **cinematic ca
 
 This project is built using a modern, high-performance frontend architecture:
 
-* [cite_start]**Framework**: React 18 (Vite)[cite: 130, 138].
-* [cite_start]**Styling**: Tailwind CSS & Glassmorphism[cite: 130, 134].
-* [cite_start]**Typography**: **Dune Rise** (Display) & **Inter** (Body)[cite: 94, 96].
-* [cite_start]**Icons**: Lucide-React[cite: 130, 136].
-* [cite_start]**Animations**: Framer Motion[cite: 130, 138].
+* **Framework**: React 18 (Vite)
+* **Styling**: Tailwind CSS & Glassmorphism.
+* **Typography**: **Dune Rise** (Display) & **Inter** (Body).
+* **Icons**: Lucide-React.
+* **Animations**: Framer Motion.
 
 ### 📂 Directory Map
 ```text
@@ -75,8 +75,7 @@ Dune Rise Font: Licensed under SIL Open Font License, Version 1.1. Thrive Protoc
 
 ### How this makes your project "Animated & Interactive"
 * **Visual Anchors**: By including a placeholder for a UI screenshot at the top, you immediately hook the viewer's eye.
-* **Bento Table**: Using Markdown tables to categorize your AI modules makes the project feel like a SaaS landing page[cite: 134, 137].
+* **Bento Table**: Using Markdown tables to categorize your AI modules makes the project feel like a SaaS landing page.
 * **Code Blocks with Emojis**: This makes technical setup look approachable and modern rather than like a wall of text.
-* **Directory Visualization**: The `text` tree structure allows judges or contributors to "walk through" your logic without opening a single folder[cite: 130].
+* **Directory Visualization**: The `text` tree structure allows judges or contributors to "walk through" your logic without opening a single folder.
 
-**Would you like me to generate a custom SVG "Progress Bar" or "Brand Card" that you
