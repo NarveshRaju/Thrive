@@ -1,0 +1,31 @@
+.rich-editor-wrapper .ql-toolbar {
+  border-radius: 0.75rem 0.75rem 0 0;
+  border: 1px solid #1f242d;
+  background: #0e1116;
+  color: #f9fafb;
+}
+
+.rich-editor-wrapper .ql-container {
+  border-radius: 0 0 0.75rem 0.75rem;
+  border: 1px solid #1f242d;
+  background: #050814;
+  color: #f9fafb;
+}
+
+.rich-editor-wrapper .ql-editor {
+  min-height: 520px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ql-snow .ql-stroke {
+  stroke: #e5e7eb;
+}
+
+.ql-snow .ql-fill {
+  fill: #e5e7eb;
+}
+
+.ql-snow .ql-picker {
+  color: #e5e7eb;
+}
