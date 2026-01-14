@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Navbar from '../components/layout/Navbar';
+import Navbar from '../components/layout/DashboardNavbar';
 import { 
   TrendingUp, Target, Award, Zap, 
   ArrowUpRight, Sparkles, CheckCircle2, 
