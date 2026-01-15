@@ -2,6 +2,7 @@
 
 > **AI-powered career acceleration platform**
 
+LINK : https://thrive-by-codesanctum.netlify.app
 ---
 
 ## ⭐ Core Features
