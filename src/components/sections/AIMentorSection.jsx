@@ -31,7 +31,7 @@ export const AIMentorSection = () => {
   ];
 
   return (
-    <section className="py-32 bg-[#0E1116] relative overflow-hidden">
+    <section className="py-32 bg-[#000000] relative overflow-hidden">
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 to-transparent" />
       

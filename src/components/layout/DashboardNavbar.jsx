@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Search, Bell, User, Sparkles, 
-  FileText, BookOpen, Mic2, ChevronDown 
+  FileText, BookOpen, Mic2, ChevronDown, History
 } from 'lucide-react';
 
 const DashboardNavbar = () => {
@@ -16,6 +16,7 @@ const DashboardNavbar = () => {
     { name: 'AI Resume Builder', path: '/resume-builder', icon: <FileText className="w-4 h-4" /> },
     { name: 'AI Learning Guide', path: '/learning-guide', icon: <BookOpen className="w-4 h-4" /> },
     { name: 'AI Interview Prep', path: '/interview-prep', icon: <Mic2 className="w-4 h-4" /> },
+    { name: 'Interview History', path: '/interview-history', icon: <History className="w-4 h-4" /> },
   ];
 
   return (

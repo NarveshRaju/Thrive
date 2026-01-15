@@ -1,0 +1,98 @@
+/* softer overall background */
+.persona-root--calm {
+  background: radial-gradient(circle at top left, #020617 0%, #020617 40%, #020617 100%);
+}
+
+/* title softer tracking */
+.persona-title--soft {
+  letter-spacing: 0.12em;
+}
+
+/* card softness */
+.persona-card--soft {
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+}
+
+.persona-card--soft::before {
+  opacity: 0.35;
+}
+
+/* softer tags */
+.persona-tag--soft {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+}
+
+/* input fields – keep white text, smaller radius, lighter glow */
+.field input,
+.field textarea {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  background: rgba(15, 23, 42, 0.98);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8rem;
+  color: #ffffff;         /* text white while typing */
+  caret-color: #22d3ee;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: rgba(94, 234, 212, 0.9);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.8);
+}
+
+/* tone pill spacing + calmer active state */
+.tone-pill--soft {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(31, 41, 55, 0.85);
+}
+
+.tone-pill-btn--soft {
+  padding: 0.35rem 0.9rem;
+}
+
+.tone-pill-btn--active-soft {
+  background: rgba(45, 212, 191, 0.2);
+  color: #a5f3fc;
+}
+
+/* primary button – less neon */
+.persona-primary-btn--calm {
+  background: linear-gradient(135deg, #22c55e, #22d3ee);
+  box-shadow: 0 10px 26px rgba(15, 118, 110, 0.75);
+}
+
+/* preview text */
+.persona-preview-body--soft {
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.persona-strength-chip--soft {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.persona-chip-btn--soft {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.persona-round-icon-btn--soft {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.persona-tagline-text--soft {
+  font-size: 0.82rem;
+}
+
+/* bottom note softer */
+.persona-bottom-note--soft {
+  border-top-style: solid;
+}

@@ -17,9 +17,8 @@ export const HeroSection = () => {
   }));
 
   return (
-    <section id="hero-section" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#030303]">
+    <section id="hero-section" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#101923]">
       {/* Haze Purple Overlay */}
-      <div className="absolute inset-0 bg-[#6B46C1]/10" />
       
       {/* Galaxy Stars */}
       <div className="absolute inset-0 overflow-hidden">
