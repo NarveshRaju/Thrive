@@ -5,7 +5,7 @@ import CareerPersonaLab from "../features/persona/CareerPersonaLab";
 
 const CareerPersona = () => {
   return (
-    <div className="bg-[#0B0D10] text-white min-h-screen font-sans antialiased">
+    <div className="bg-[#030303] text-white min-h-screen font-sans antialiased">
       <DashboardNavbar />
       <main className="pt-16 pb-10 px-4 md:px-8 max-w-6xl mx-auto">
         <CareerPersonaLab />

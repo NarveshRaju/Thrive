@@ -1,342 +1,519 @@
-import React, { useState } from "react";
-import { ClipboardCopy, Wand2, Target } from "lucide-react";
-
-const samplePersona = {
-  title: "Flutter Dev",
-  summary:
-    "Geetanjali is a Flutter Dev who consistently ships outcomes, not just features. Key strengths include Flutter.",
-  strengths: ["Flutter", "Ownership mindset", "Problem‑solving"],
-  tagline: "Obsessed with measurable outcomes and compound career growth.",
-};
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Send,
+  Sparkles,
+  FileText,
+  Loader2,
+  Zap,
+  Copy,
+  Check,
+  Download,
+} from "lucide-react";
 
 const CareerPersonaLab = () => {
-  const [name, setName] = useState("");
-  const [currentRole, setCurrentRole] = useState("");
-  const [experience, setExperience] = useState("");
-  const [targetRole, setTargetRole] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [skills, setSkills] = useState("");
-  const [strengths, setStrengths] = useState("");
-  const [goals, setGoals] = useState("");
-
+  const [coverLetter, setCoverLetter] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: "sys-1",
+      role: "assistant",
+      text:
+        "Hi! I have your resume context. I will keep updating this cover letter on the right. " +
+        "Tell me what you want to emphasize (roles, projects, tone, length, etc.).",
+    },
+  ]);
   const [tone, setTone] = useState("professional");
-  const [persona, setPersona] = useState(samplePersona);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [resumeContext, setResumeContext] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const chatEndRef = useRef(null);
 
-  const baseInput =
-    "w-full rounded-2xl border border-slate-700/80 bg-slate-100 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition";
-
-  const handleGenerate = () => {
-    setIsGenerating(true);
-
-    const safeName = name || "This candidate";
-    const safeRole = targetRole || currentRole || "software engineer";
-
-    const summaryBase =
-      tone === "friendly"
-        ? `${safeName} is a ${safeRole} who enjoys turning ideas into polished, user‑friendly experiences.`
-        : tone === "impact"
-        ? `${safeName} is a ${safeRole} focused on shipping meaningful outcomes, not just closing tickets.`
-        : `${safeName} is a ${safeRole} with a balanced focus on user experience, code quality, and business impact.`;
-
-    const skillsText = skills ? `They work across ${skills.trim()}.` : "";
-    const strengthsText = strengths
-      ? `Key strengths include ${strengths.trim()}.`
-      : "";
-    const goalsText = goals
-      ? `Currently focused on ${goals.trim()} in the ${
-          industry || "tech"
-        } space.`
-      : industry
-      ? `Motivated by impactful work in the ${industry} domain.`
-      : "";
-
-    const summary = [summaryBase, skillsText, strengthsText, goalsText]
-      .filter(Boolean)
-      .join(" ");
-
-    const title = targetRole || currentRole || "Career‑focused professional";
-
-    const tagline =
-      tone === "friendly"
-        ? "Curious, collaborative, and always learning on the job."
-        : tone === "impact"
-        ? "Obsessed with measurable impact and long‑term growth."
-        : "Building reliable products with thoughtful, calm execution.";
-
-    const strengthsArr =
-      strengths.trim().length > 0
-        ? strengths
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : ["Ownership mindset", "Communication", "Problem‑solving"];
-
-    // small delay just for UX, then update persona and reset loading
-    setTimeout(() => {
-      setPersona({
-        title,
-        summary,
-        strengths: strengthsArr,
-        tagline,
-      });
-      setIsGenerating(false);
-    }, 400);
+  const scrollToBottom = () => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
-  const copyToClipboard = (text) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text).catch(() => {});
+  useEffect(scrollToBottom, [messages]);
+
+  const buildInitialCoverLetter = (data) => {
+    const name = data.fullName || "Candidate";
+    const role = "Flutter & MERN Developer";
+    const location = data.location || "your location";
+    const skills = (data.skills || "")
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 6)
+      .join(", ");
+
+    const firstExpLine = (data.experience || "")
+      .split("\n")
+      .find((l) => l.trim());
+    const firstProjectLine = (data.projects || "")
+      .split("\n")
+      .find((l) => l.trim());
+
+    // Build cover letter WITHOUT final signature
+    const letterBody =
+      `Dear Hiring Manager,\n\n` +
+      `My name is ${name}, a ${role} based in ${location}. I am excited to apply for product-focused roles where I can combine clean engineering practices with thoughtful user experience.\n\n` +
+      (firstExpLine ? `Most recently, ${firstExpLine.trim()}\n\n` : "") +
+      (firstProjectLine
+        ? `I have also built projects such as ${firstProjectLine.trim()}\n\n`
+        : "") +
+      (skills
+        ? `Across these experiences, I have worked extensively with ${skills}, and I am comfortable owning features from idea to deployment.\n\n`
+        : "") +
+      `I would love the opportunity to bring this mix of execution, collaboration, and ownership mindset to your team.`;
+
+    return letterBody;
+  };
+
+  const handlePdfUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setIsUploading(true);
+      const resp = await fetch("http://localhost:4000/api/resume/extract", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!resp.ok) {
+        alert("Failed to extract resume from PDF");
+        return;
+      }
+
+      const data = await resp.json();
+      setResumeContext(data);
+      const initial = buildInitialCoverLetter(data);
+      setCoverLetter(initial);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: "sys-2",
+          role: "assistant",
+          text:
+            "I generated a first version of your cover letter from the uploaded resume. " +
+            "Ask me to shorten it, make it more confident, tailor it to a role, or highlight specific projects.",
+        },
+      ]);
+    } catch (e) {
+      console.error(e);
+      alert("Error talking to backend. Is it running on port 4000?");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const callAiAgent = async (userMessage) => {
+    const resp = await fetch("http://localhost:4000/api/persona/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userMessage,
+        resumeContext,
+        coverLetter,
+        tone,
+      }),
+    });
+
+    if (!resp.ok) {
+      throw new Error("Gemini backend failed");
+    }
+
+    const data = await resp.json();
+    return {
+      reply: data.reply || "Updated your cover letter.",
+      newCoverLetter: data.newCoverLetter || coverLetter,
+    };
+  };
+
+  const handleSend = async () => {
+    const trimmed = chatInput.trim();
+    if (!trimmed) return;
+    if (!resumeContext && !coverLetter) {
+      alert("Upload a resume first so I have context.");
+      return;
+    }
+
+    const newUserMsg = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      text: trimmed,
+    };
+
+    setMessages((prev) => [...prev, newUserMsg]);
+    setChatInput("");
+    setIsThinking(true);
+
+    try {
+      const { reply, newCoverLetter } = await callAiAgent(trimmed);
+      setCoverLetter(newCoverLetter);
+      setMessages((prev) => [
+        ...prev,
+        { id: `assistant-${Date.now()}`, role: "assistant", text: reply },
+      ]);
+    } catch (e) {
+      console.error(e);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-error-${Date.now()}`,
+          role: "assistant",
+          text: "Something went wrong while updating the persona. Please try again in a moment.",
+        },
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleCopy = async () => {
+    if (coverLetter) {
+      await navigator.clipboard.writeText(coverLetter);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownloadCoverLetter = async () => {
+    if (!coverLetter.trim()) {
+      alert("Generate a cover letter first.");
+      return;
+    }
+    try {
+      setIsDownloading(true);
+
+      const payload = {
+        coverLetter,
+        resumeContext,
+      };
+
+      const resp = await fetch(
+        "http://localhost:4000/api/cover-letter/export",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!resp.ok) {
+        alert("Failed to generate cover letter PDF");
+        return;
+      }
+
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cover-letter.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Error generating cover letter PDF. Check backend logs.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 pt-20 pb-10 px-4 md:px-8">
-      {/* header */}
-      <header className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-300 mb-1">
-            AI Career Persona
-          </p>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-[0.16em] uppercase">
-            Define your professional identity
-          </h1>
-          <p className="mt-2 text-sm text-slate-400 max-w-xl">
-            Capture a clear, reusable persona you can use across your resume,
-            LinkedIn, and portfolio.
-          </p>
-        </div>
-        <button className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-100 hover:border-cyan-400 hover:text-cyan-300 transition">
-          <Target className="w-4 h-4" />
-          Use for Resume Lab
-        </button>
-      </header>
+    <div className="min-h-screen bg-black text-white pt-16 pb-10 px-4 md:px-8">
+      {/* soft orange glow in background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[720px] h-[260px] bg-[#f97316]/18 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-[420px] h-[220px] bg-[#f97316]/12 blur-[90px]" />
+      </div>
 
-      {/* layout */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.5fr_minmax(0,1.1fr)] gap-6">
-        {/* left form */}
-        <section className="rounded-[1.75rem] bg-slate-900/80 border border-slate-800/80 p-6 md:p-7 shadow-xl shadow-black/60">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className="inline-flex rounded-full border border-slate-700/80 bg-slate-900/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Your inputs
-              </span>
-              <p className="mt-2 text-xs text-slate-500">
-                A few details are enough. You can refine this anytime as your
-                career evolves.
+      <div className="relative max-w-6xl mx-auto">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4 text-[#f97316]" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f97316]">
+                AI Persona & Cover Letter
               </p>
             </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Shape your story with <span className="text-[#f97316]">AI</span>
+            </h1>
+            <p className="mt-2 text-sm text-neutral-300 max-w-xl">
+              Upload your resume once. Chat with the AI on the left, and watch
+              your cover letter evolve live on the right.
+            </p>
           </div>
 
-          {/* identity row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Name
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Geetanjali"
-                className={baseInput}
-              />
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <div className="rounded-full border border-neutral-600 bg-black px-5 py-2.5 flex items-center gap-2 text-sm font-medium text-neutral-50 hover:border-[#f97316] hover:text-[#f97316] transition">
+              <FileText className="w-4 h-4" />
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <span>Upload Resume (PDF)</span>
+              )}
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Current role / stage
-              </label>
-              <input
-                value={currentRole}
-                onChange={(e) => setCurrentRole(e.target.value)}
-                placeholder="Flutter developer · Student"
-                className={baseInput}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Experience
-              </label>
-              <input
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                placeholder="2 yrs"
-                className={baseInput}
-              />
-            </div>
-          </div>
+            <input
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handlePdfUpload}
+              disabled={isUploading}
+            />
+          </label>
+        </header>
 
-          {/* direction */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Target role
-              </label>
-              <input
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                placeholder="Flutter Dev · Mobile Engineer"
-                className={baseInput}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Preferred industry
-              </label>
-              <input
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                placeholder="Healthtech · SaaS · Fintech"
-                className={baseInput}
-              />
-            </div>
-          </div>
+        {/* Two main cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT: chat card */}
+          <section className="relative rounded-[32px] bg-[#050505] border border-neutral-800 shadow-[0_0_50px_rgba(249,115,22,0.25)]">
+            <div className="pointer-events-none absolute inset-[1px] rounded-[31px] border border-[#f97316]/35" />
 
-          {/* details */}
-          <div className="space-y-3 mb-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Skills & domains
-              </label>
-              <textarea
-                rows={2}
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                placeholder="Flutter, Firebase, clean architecture, dashboards, data viz..."
-                className={`${baseInput} resize-none min-h-[72px]`}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Strengths (comma‑separated)
-              </label>
-              <input
-                value={strengths}
-                onChange={(e) => setStrengths(e.target.value)}
-                placeholder="Flutter, MERN, Mongo"
-                className={baseInput}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Current focus / goals
-              </label>
-              <textarea
-                rows={2}
-                value={goals}
-                onChange={(e) => setGoals(e.target.value)}
-                placeholder="Ship 2–3 real apps, crack a Flutter role at a product‑first startup..."
-                className={`${baseInput} resize-none min-h-[80px]`}
-              />
-            </div>
-          </div>
-
-          {/* tone + CTA */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400 uppercase tracking-[0.16em]">
-                Tone
-              </span>
-              <div className="inline-flex rounded-full bg-slate-900/80 border border-slate-700/80 p-1">
-                {[
-                  { id: "professional", label: "Professional" },
-                  { id: "friendly", label: "Friendly" },
-                  { id: "impact", label: "Impact‑focused" },
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setTone(opt.id)}
-                    className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                      tone === opt.id
-                        ? "bg-cyan-400 text-slate-900"
-                        : "text-slate-400 hover:text-slate-100"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+            {/* header row */}
+            <div className="relative flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800">
+              <div>
+                <div className="inline-flex items-center rounded-full border border-neutral-600 px-4 py-1 text-[11px] uppercase tracking-[0.18em]">
+                  Persona Chat
+                </div>
+                <p className="mt-2 text-xs text-neutral-400">
+                  Ask for rewrites, different tones, or highlight specific
+                  projects.
+                </p>
+              </div>
+              <div className="inline-flex items-center rounded-full border border-[#f97316] bg-black px-4 py-1 text-[11px] uppercase tracking-[0.18em] text-[#f97316]">
+                <Sparkles className="w-3.5 h-3.5 mr-2" />
+                Thrive AI
               </div>
             </div>
 
-            {/* PUT THE GENERATE BUTTON HERE */}
-            <button
-              type="button"
-              onClick={handleGenerate}
-              className="inline-flex items-center gap-2 self-start md:self-auto rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900 shadow-lg shadow-emerald-900/60 hover:brightness-105 transition"
-            >
-              <Wand2 className="w-4 h-4" />
-              {isGenerating ? "Shaping persona..." : "Generate persona"}
-            </button>
-          </div>
-        </section>
-
-        {/* right preview */}
-        <section className="rounded-[1.75rem] bg-slate-900/80 border border-slate-800/80 p-6 md:p-7 shadow-xl shadow-black/60 flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <span className="inline-flex rounded-full border border-slate-700/80 bg-slate-900/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Persona snapshot
-              </span>
-              <h2 className="mt-3 text-lg font-semibold tracking-[0.12em] uppercase">
-                {persona.title}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                copyToClipboard(
-                  `${persona.title}\n\n${persona.summary}\n\nTagline: ${persona.tagline}`
-                )
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-slate-700/80 bg-slate-900/90 px-3 py-1 text-[11px] text-slate-100 hover:border-cyan-400 hover:text-cyan-300 transition"
-            >
-              <ClipboardCopy className="w-3 h-3" />
-              Copy all
-            </button>
-          </div>
-
-          <p className="text-xs md:text-sm text-slate-200 leading-relaxed">
-            {persona.summary}
-          </p>
-
-          <div className="mt-2 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Strength highlights
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {persona.strengths.map((s) => (
-                <span
-                  key={s}
-                  className="rounded-full border border-slate-600 bg-slate-900/80 px-3 py-1 text-[11px] text-slate-100"
+            {/* messages */}
+            <div className="relative px-6 pt-4 pb-3 h-[280px] overflow-y-auto">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`max-w-[90%] text-sm leading-relaxed mb-3 ${
+                    msg.role === "user" ? "ml-auto" : "mr-auto"
+                  }`}
                 >
-                  {s}
-                </span>
+                  <div className="rounded-[18px] px-4 py-3 bg-black border border-neutral-700 text-neutral-50">
+                    {msg.text}
+                  </div>
+                </div>
               ))}
+              {isThinking && (
+                <div className="mr-auto mt-3 text-sm text-neutral-300">
+                  <div className="inline-flex items-center gap-2 rounded-[18px] px-4 py-3 bg-black border border-neutral-700">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#f97316]" />
+                    Updating your persona...
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
             </div>
-          </div>
 
-          <div className="mt-4 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-1">
-                Tagline
-              </p>
-              <p className="text-xs md:text-sm text-slate-200">
-                {persona.tagline}
+            {/* input + tone */}
+            <div className="relative border-t border-neutral-800 px-6 pt-4 pb-5 space-y-4">
+              {/* input row */}
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <div className="rounded-[22px] border border-neutral-700 bg-black px-4 py-2.5">
+                    <textarea
+                      rows={1}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Upload your resume first to get started..."
+                      className="w-full resize-none bg-transparent text-sm text-neutral-100 placeholder:text-neutral-500 outline-none"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!chatInput.trim()}
+                  className="p-2.5 rounded-[18px] bg-[#f97316] text-black hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* tone */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-neutral-400">
+                  Tone
+                </span>
+                <div className="inline-flex rounded-full bg-black border border-neutral-700 px-2 py-1">
+                  {[
+                    { id: "professional", label: "Professional" },
+                    { id: "friendly", label: "Friendly" },
+                    { id: "impact", label: "Impact" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setTone(opt.id)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-medium ${
+                        tone === opt.id
+                          ? "bg-[#f97316] text-black"
+                          : "text-neutral-200 hover:bg-white/5"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-neutral-500">
+                Enter to send · Shift+Enter for new line
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(persona.tagline)}
-              className="p-1.5 rounded-full border border-slate-700/80 bg-slate-900/90 hover:border-cyan-400 hover:text-cyan-300 transition"
-            >
-              <ClipboardCopy className="w-3 h-3" />
-            </button>
-          </div>
+          </section>
 
-          <div className="mt-4 border-t border-slate-800 pt-3 text-[11px] text-slate-500">
-            Use this persona to keep your resume summary, LinkedIn about
-            section, and side projects aligned with the same story.
-          </div>
-        </section>
+          {/* RIGHT: preview card */}
+          <section className="relative rounded-[32px] bg-[#050505] border border-neutral-800 shadow-[0_0_50px_rgba(249,115,22,0.25)]">
+            <div className="pointer-events-none absolute inset-[1px] rounded-[31px] border border-[#f97316]/35" />
+            {/* header */}
+            <div className="relative flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800">
+              <div>
+                <div className="inline-flex items-center rounded-full border border-neutral-600 px-4 py-1 text-[11px] uppercase tracking-[0.18em]">
+                  Cover Letter Preview
+                </div>
+                <p className="mt-2 text-xs text-neutral-400">
+                  Ready to paste into applications or export.
+                </p>
+              </div>
+              {coverLetter && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-600 px-3 py-1.5 text-[11px] text-neutral-100 hover:border-[#f97316] hover:text-[#f97316] transition"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleDownloadCoverLetter}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#f97316] bg-[#f97316] px-3 py-1.5 text-[11px] text-black hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={isDownloading}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {isDownloading ? "Downloading..." : "Download"}
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* content – WHITE background with proper header styling */}
+            <div className="relative px-6 py-6 h-[360px] overflow-y-auto bg-white">
+              {coverLetter ? (
+                <div className="max-w-full">
+                  {/* Header bar with contact info */}
+                  <div className="bg-gray-300 text-black px-4 py-3 mb-4 -mx-6 -mt-6">
+                    <div className="text-center">
+                      <h2 className="text-lg font-bold tracking-wider mb-2">
+                        {resumeContext?.fullName || "APPLICANT NAME"}
+                      </h2>
+                      <div className="text-[9px] leading-tight space-y-0.5">
+                        {resumeContext?.email && (
+                          <div>{resumeContext.email}</div>
+                        )}
+                        {resumeContext?.linkedin && (
+                          <div>{resumeContext.linkedin}</div>
+                        )}
+                        {resumeContext?.phone && (
+                          <div>{resumeContext.phone}</div>
+                        )}
+                        {resumeContext?.location && (
+                          <div>{resumeContext.location}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Letter body */}
+                  <article className="font-serif text-[10.5px] leading-[1.6] text-black">
+                    {(() => {
+                      // Clean up the cover letter - remove "Best regards," lines that appear in the middle
+                      let cleanedLetter = coverLetter;
+
+                      // Remove any "Best regards, NAME" pattern that appears before the final closing
+                      cleanedLetter = cleanedLetter.replace(
+                        /Best regards,\s*\n?\s*\n?/gi,
+                        ""
+                      );
+
+                      // Split by double newlines to get paragraphs
+                      const paragraphs = cleanedLetter
+                        .split("\n\n")
+                        .map((p) => p.trim())
+                        .filter((p) => p.length > 0);
+
+                      return paragraphs.map((paragraph, idx) => (
+                        <p key={idx} className="mb-3 text-justify">
+                          {paragraph}
+                        </p>
+                      ));
+                    })()}
+
+                    {/* Closing */}
+                    <div className="mt-6">
+                      <p className="mb-10 text-sm">Best regards,</p>
+                      <div className="mb-2">
+                        <p className="font-bold text-sm">
+                          {resumeContext?.fullName || "APPLICANT NAME"}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center mb-4">
+                    <FileText className="w-7 h-7 text-gray-500" />
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-800 mb-2">
+                    No cover letter yet
+                  </h3>
+                  <p className="text-xs text-gray-600 max-w-xs leading-relaxed">
+                    Upload your resume to generate a first cover letter. Then
+                    use the AI chat to refine tone, length, and focus.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

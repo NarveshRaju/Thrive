@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/pages/ResumeLab/PreviewModal.jsx
 import React from "react";
 
