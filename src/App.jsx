@@ -16,6 +16,8 @@ import CareerPersona from './pages/CareerPersona';
 import InterviewRoom from './pages/InterviewRoom';
 import InterviewHistory from './pages/InterviewHistory';
 import InterviewPrep from './pages/InterviewPrep';
+import CareerPathRecommender from './pages/CareerPathRecommender'; // Add this import
+import LearningGuide from './pages/LearningGuide';
 
 function App() {
   return (
@@ -30,7 +32,8 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          
+                    <Route path="/learning-guide" element={<LearningGuide />} />
+
           {/* Onboarding */}
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/interview-prep" element={<InterviewPrep />} />
@@ -38,6 +41,7 @@ function App() {
           {/* Dashboard & Career */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/career-persona" element={<CareerPersona />} />
+          <Route path="/career-path" element={<CareerPathRecommender />} /> {/* Add this route */}
           
           {/* Resume Builder */}
           <Route path="/resume-builder" element={<ResumeEntryPage />} />

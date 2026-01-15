@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   careerProfile: {
-    status: String, // student, graduate, career_switcher
+    status: String,
     passion: String,
     answers: Object,
     aiAnalysis: String,
@@ -65,9 +65,8 @@ const userSchema = new mongoose.Schema({
   resumeRawText: String,
   resumeUploadedAt: Date,
   
-  // LinkedIn Data (Comprehensive)
+  // LinkedIn Data
   linkedinData: {
-    // Basic Info
     id: String,
     firstName: String,
     lastName: String,
@@ -75,8 +74,6 @@ const userSchema = new mongoose.Schema({
     profilePicture: String,
     headline: String,
     summary: String,
-    
-    // Work Experience
     positions: [{
       title: String,
       company: String,
@@ -86,8 +83,6 @@ const userSchema = new mongoose.Schema({
       location: String,
       isCurrent: Boolean
     }],
-    
-    // Education
     education: [{
       school: String,
       degree: String,
@@ -97,18 +92,12 @@ const userSchema = new mongoose.Schema({
       activities: String,
       grade: String
     }],
-    
-    // Skills
     skills: [String],
-    
-    // Posts/Activity
     postsCount: Number,
     recentPosts: [{
       text: String,
       created: Date
     }],
-    
-    // Certifications
     certifications: [{
       name: String,
       authority: String,
@@ -116,30 +105,134 @@ const userSchema = new mongoose.Schema({
       endDate: Object,
       licenseNumber: String
     }],
-    
-    // Languages
     languages: [{
       name: String,
       proficiency: String
     }],
-    
-    // Metadata
     accessToken: String,
     fetchedAt: Date
   },
   linkedinConnectedAt: Date,
   
-  // AI-Generated Insights
+  // AI-Generated Insights (ENHANCED)
   aiInsights: {
+    // Career Path Recommendations
     careerPath: String,
+    alternativePaths: [String],
+    topCareerRecommendation: String,
+    
+    // Complete Career Paths (Solar System)
+    completeCareerPaths: {
+      topRecommendation: String,
+      personalizedMessage: String,
+      careers: [{
+        id: Number,
+        title: String,
+        matchScore: Number,
+        planet: String,
+        size: Number,
+        description: String,
+        salary: String,
+        growth: String,
+        demand: String,
+        whyMatch: [String],
+        requiredSkills: [String],
+        skillsYouHave: [String],
+        skillsToLearn: [String],
+        industryTrends: [String],
+        roadmap: [{
+          phase: String,
+          duration: String,
+          description: String,
+          topics: [String]
+        }],
+        learningResources: [String],
+        nextSteps: [String],
+        estimatedTimeToJob: String,
+        icon: String,
+        generatedAt: Date
+      }],
+      profileType: String,
+      generatedAt: Date
+    },
+    careerPathsGeneratedAt: Date,
+    
+    // Learning Path (NEW - Persistent)
+    learningPath: {
+      pathName: String,
+      personalizedMessage: String,
+      estimatedTotalTime: String,
+      skillLevel: String,
+      levels: [{
+        id: Number,
+        name: String,
+        subtitle: String,
+        planetName: String,
+        difficulty: String,
+        color: String,
+        topics: [String],
+        estimatedTime: String,
+        badge: String,
+        videoId: String,
+        description: String,
+        project: String,
+        assessment: [{
+          question: String,
+          options: [String],
+          correctAnswer: Number,
+          tip: String
+        }]
+      }],
+      generatedAt: Date
+    },
+    learningPathGeneratedAt: Date,
+    
+    // General Insights
     strengths: [String],
     areasForImprovement: [String],
     recommendedSkills: [String],
     careerRecommendations: [String],
     personalityTraits: [String],
     industryFit: [String],
+    jobReadinessScore: Number,
     generatedAt: Date
   },
+  
+  // Learning Progress Tracking (NEW)
+  learningProgress: {
+    unlockedLevel: {
+      type: Number,
+      default: 1
+    },
+    completedLevels: [{
+      type: Number
+    }],
+    levelScores: [{
+      levelId: Number,
+      score: Number,
+      completedAt: Date,
+      attempts: Number,
+      mistakes: [{
+        question: String,
+        userAnswer: Number,
+        correctAnswer: Number,
+        tip: String
+      }]
+    }],
+    totalTimeSpent: {
+      type: Number,
+      default: 0 // in minutes
+    },
+    lastAccessedAt: Date,
+    startedAt: Date,
+    badges: [{
+      name: String,
+      earnedAt: Date,
+      levelId: Number
+    }]
+  },
+  
+  // Interview History
   interviewHistory: [{
     interviewId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -199,6 +292,62 @@ userSchema.pre('save', async function(next) {
 
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Helper method to unlock next level
+userSchema.methods.unlockNextLevel = function(currentLevelId, score) {
+  if (!this.learningProgress) {
+    this.learningProgress = {
+      unlockedLevel: 1,
+      completedLevels: [],
+      levelScores: [],
+      totalTimeSpent: 0
+    };
+  }
+
+  const passed = score >= 70;
+  
+  if (passed) {
+    // Add to completed if not already there
+    if (!this.learningProgress.completedLevels.includes(currentLevelId)) {
+      this.learningProgress.completedLevels.push(currentLevelId);
+    }
+    
+    // Unlock next level
+    if (currentLevelId === this.learningProgress.unlockedLevel) {
+      this.learningProgress.unlockedLevel = currentLevelId + 1;
+    }
+  }
+  
+  return passed;
+};
+
+// Helper method to get learning stats
+userSchema.methods.getLearningStats = function() {
+  if (!this.learningProgress || !this.aiInsights?.learningPath) {
+    return null;
+  }
+
+  const totalLevels = this.aiInsights.learningPath.levels?.length || 0;
+  const completedLevels = this.learningProgress.completedLevels.length;
+  const progressPercentage = totalLevels > 0 ? Math.round((completedLevels / totalLevels) * 100) : 0;
+  
+  const averageScore = this.learningProgress.levelScores.length > 0
+    ? Math.round(
+        this.learningProgress.levelScores.reduce((sum, s) => sum + s.score, 0) / 
+        this.learningProgress.levelScores.length
+      )
+    : 0;
+
+  return {
+    totalLevels,
+    completedLevels,
+    progressPercentage,
+    averageScore,
+    totalTimeSpent: this.learningProgress.totalTimeSpent,
+    currentLevel: this.learningProgress.unlockedLevel,
+    badgesEarned: this.learningProgress.badges?.length || 0
+  };
 };
 
 export default mongoose.model('User', userSchema);

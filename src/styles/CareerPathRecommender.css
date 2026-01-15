@@ -1,0 +1,944 @@
+.solar-career-container {
+  min-height: 100vh;
+  background: #000000;
+  padding: 3rem 2rem;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Header */
+.solar-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: #9CA3AF;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Solar System */
+.solar-system {
+  position: relative;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  display: flex;
+  align-items: center;
+  min-height: 500px;
+  z-index: 1;
+}
+
+/* Sun */
+.sun {
+  position: absolute;
+  left: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.sun-sphere {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  animation: sun-rotate 120s linear infinite;
+}
+
+.sun-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, 
+    #FFD700 0%,
+    #FFA500 25%,
+    #f97316 50%,
+    #ea580c 75%,
+    #c2410c 100%
+  );
+  box-shadow: 
+    0 0 40px rgba(249, 115, 22, 0.8),
+    0 0 80px rgba(249, 115, 22, 0.6),
+    0 0 120px rgba(249, 115, 22, 0.4),
+    inset -15px -15px 40px rgba(0, 0, 0, 0.4),
+    inset 10px 10px 30px rgba(255, 200, 100, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.sun-surface::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(255, 150, 50, 0.1) 20px,
+      rgba(255, 150, 50, 0.1) 40px
+    );
+  animation: solar-flare 30s linear infinite;
+}
+
+@keyframes sun-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes solar-flare {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sun-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f97316;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Orbit Line - Ambient Diffused Light Effect */
+.orbit-line {
+  position: absolute;
+  left: 20%;
+  right: 5%;
+  top: 50%;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 255, 255, 0.4) 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.2) 70%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  transform: translateY(-50%);
+  z-index: 1;
+  box-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.1);
+  filter: blur(0.5px);
+}
+
+/* Add glow animation to orbit line */
+.orbit-line::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(255, 255, 255, 0.5) 30%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.3) 70%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  transform: translateY(-50%);
+  animation: orbit-glow 3s ease-in-out infinite;
+}
+
+@keyframes orbit-glow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Planets Orbit */
+.planets-orbit {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 75%;
+  margin-left: auto;
+  gap: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Planet Group */
+.planet-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.planet-group.above {
+  margin-bottom: 180px;
+}
+
+.planet-group.below {
+  margin-top: 180px;
+}
+
+/* Vertical Connector - Match the ambient style */
+.planet-connector {
+  width: 2px;
+  height: 90px;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.planet-group.above .planet-connector {
+  bottom: -90px;
+}
+
+.planet-group.below .planet-connector {
+  top: -90px;
+}
+
+/* Planet Sphere */
+.planet-sphere {
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  z-index: 3;
+  transition: all 0.3s ease;
+}
+
+.planet-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.planet-atmosphere {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Mercury - Grey, cratered */
+.planet-sphere.mercury {
+  animation: planet-rotate 40s linear infinite;
+}
+
+.planet-sphere.mercury .planet-surface {
+  background: radial-gradient(circle at 35% 35%, 
+    #B5B5B5 0%,
+    #8B8B8B 40%,
+    #6B6B6B 70%,
+    #4A4A4A 100%
+  );
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.8),
+    inset -10px -10px 25px rgba(0, 0, 0, 0.7),
+    inset 5px 5px 15px rgba(255, 255, 255, 0.15);
+}
+
+/* Venus - Pale yellow with clouds */
+.planet-sphere.venus {
+  animation: planet-rotate 50s linear infinite reverse;
+}
+
+.planet-sphere.venus .planet-surface {
+  background: radial-gradient(circle at 35% 35%, 
+    #F5DEB3 0%,
+    #E8C48A 40%,
+    #D4A574 70%,
+    #C49A6B 100%
+  );
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.8),
+    inset -12px -12px 30px rgba(0, 0, 0, 0.6),
+    inset 6px 6px 18px rgba(255, 255, 200, 0.3);
+}
+
+.planet-sphere.venus .planet-atmosphere {
+  background: radial-gradient(circle at 30% 30%,
+    rgba(255, 245, 200, 0.3),
+    transparent 60%
+  );
+}
+
+/* Earth - Blue with continents */
+.planet-sphere.earth {
+  animation: planet-rotate 24s linear infinite;
+}
+
+.planet-sphere.earth .planet-surface {
+  background: radial-gradient(circle at 35% 35%, 
+    #6DB3F2 0%,
+    #4A90E2 35%,
+    #2E5F8F 65%,
+    #1E3A5F 100%
+  );
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.8),
+    0 0 25px rgba(74, 144, 226, 0.3),
+    inset -12px -12px 30px rgba(0, 0, 0, 0.6),
+    inset 6px 6px 18px rgba(255, 255, 255, 0.25);
+}
+
+.planet-sphere.earth .planet-surface::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 20% 40%, rgba(50, 100, 50, 0.8) 0%, transparent 15%),
+    radial-gradient(ellipse at 70% 60%, rgba(40, 80, 40, 0.7) 0%, transparent 20%);
+}
+
+.planet-sphere.earth .planet-atmosphere {
+  background: radial-gradient(circle at 30% 30%,
+    rgba(150, 200, 255, 0.2),
+    transparent 70%
+  );
+}
+
+/* Mars - Red planet */
+.planet-sphere.mars {
+  animation: planet-rotate 25s linear infinite;
+}
+
+.planet-sphere.mars .planet-surface {
+  background: radial-gradient(circle at 35% 35%, 
+    #E07B7B 0%,
+    #CD5C5C 40%,
+    #A34A4A 70%,
+    #8B3A3A 100%
+  );
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.8),
+    inset -12px -12px 30px rgba(0, 0, 0, 0.7),
+    inset 6px 6px 18px rgba(255, 150, 150, 0.2);
+}
+
+/* Jupiter - Gas giant with bands */
+.planet-sphere.jupiter {
+  animation: planet-rotate 10s linear infinite;
+}
+
+.planet-sphere.jupiter .planet-surface {
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      #D4A574 0px,
+      #C88B5A 15px,
+      #A67147 30px,
+      #C88B5A 45px
+    ),
+    radial-gradient(circle at 35% 35%, 
+      #E5B88A 0%,
+      #C88B5A 50%,
+      #A67147 100%
+    );
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.8),
+    inset -15px -15px 35px rgba(0, 0, 0, 0.6),
+    inset 8px 8px 20px rgba(255, 200, 150, 0.3);
+}
+
+.planet-sphere.jupiter .planet-surface::after {
+  content: '';
+  position: absolute;
+  width: 25%;
+  height: 25%;
+  background: radial-gradient(circle, #CD5C5C 0%, rgba(205, 92, 92, 0) 70%);
+  border-radius: 50%;
+  top: 35%;
+  left: 45%;
+  opacity: 0.8;
+}
+
+/* Saturn - Pale yellow with prominent rings */
+.planet-sphere.saturn {
+  animation: planet-rotate 35s linear infinite;
+}
+
+.planet-sphere.saturn .planet-surface {
+  background: radial-gradient(circle at 35% 35%, 
+    #F5E8B8 0%,
+    #E6D8A3 40%,
+    #C9B876 70%,
+    #B5A668 100%
+  );
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.8),
+    inset -12px -12px 30px rgba(0, 0, 0, 0.5),
+    inset 6px 6px 18px rgba(255, 255, 230, 0.3);
+}
+
+.saturn-rings {
+  position: absolute;
+  width: 160%;
+  height: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotateX(75deg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ring-1 {
+  border-color: rgba(230, 216, 163, 0.7);
+  box-shadow: 0 0 10px rgba(230, 216, 163, 0.3);
+}
+
+.ring-2 {
+  width: 140%;
+  height: 70%;
+  border-color: rgba(230, 216, 163, 0.4);
+  box-shadow: 0 0 8px rgba(230, 216, 163, 0.2);
+}
+
+@keyframes planet-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Career Title Label */
+.career-title-label {
+  text-align: center;
+  margin-top: 1rem;
+  position: absolute;
+  width: 180px;
+}
+
+.planet-group.above .career-title-label {
+  top: -140px;
+}
+
+.planet-group.below .career-title-label {
+  bottom: -140px;
+}
+
+.career-title-label h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+  color: #FFFFFF;
+}
+
+.mini-stats {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.salary-badge,
+.growth-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #E5E5E5;
+}
+
+.growth-badge {
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Modal Content */
+.modal-content {
+  background: #0A0A0A;
+  border-radius: 1rem;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 2rem;
+  background: rgba(20, 20, 20, 0.8);
+  border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+  position: relative;
+}
+
+.modal-title-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.modal-title-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #FFFFFF;
+}
+
+.modal-description {
+  font-size: 1rem;
+  color: #9CA3AF;
+  line-height: 1.6;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #f97316;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(249, 115, 22, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Modal Body */
+.modal-body {
+  padding: 2rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
+.stat-card h4 {
+  color: #9CA3AF;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 0.5rem;
+  font-weight: 500;
+}
+
+.stat-card p {
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Modal Section */
+.modal-section {
+  margin-bottom: 2.5rem;
+}
+.solar-career-container {
+  padding-top: 80px; /* Space for navbar */
+}
+
+.solar-header {
+  margin-top: 2rem; /* Extra spacing */
+}
+
+.modal-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #FFFFFF;
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* Skills Tags */
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.skill-tag {
+  padding: 0.5rem 1rem;
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 1.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #f97316;
+  transition: all 0.3s ease;
+}
+
+.skill-tag:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.5);
+}
+
+/* Trends List */
+.trends-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trends-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: rgba(20, 20, 20, 0.5);
+  border-left: 2px solid #f97316;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #E5E5E5;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.trends-list li:hover {
+  background: rgba(20, 20, 20, 0.8);
+  transform: translateX(5px);
+}
+
+/* Roadmap */
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.roadmap-phase {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.phase-number {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.35rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.phase-content {
+  flex: 1;
+  background: rgba(20, 20, 20, 0.5);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.phase-content:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  transform: translateX(5px);
+}
+
+.phase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.phase-header h4 {
+  color: #f97316;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.phase-duration {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9CA3AF;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.phase-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.topic-tag {
+  padding: 0.35rem 0.75rem;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 1rem;
+  color: #f97316;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Resources List */
+.resources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.resources-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: rgba(20, 20, 20, 0.5);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 0.5rem;
+  color: #E5E5E5;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.resources-list li:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  transform: translateY(-2px);
+}
+
+/* CTA */
+.modal-cta {
+  text-align: center;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.start-learning-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 2.25rem;
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.start-learning-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Scrollbar */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(20, 20, 20, 0.5);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #f97316;
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .planets-orbit {
+    flex-wrap: wrap;
+    width: 70%;
+  }
+
+  .orbit-line {
+    left: 25%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .solar-system {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sun {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: none;
+    margin-bottom: 3rem;
+  }
+
+  .orbit-line {
+    display: none;
+  }
+
+  .planets-orbit {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 3rem;
+  }
+
+  .planet-connector {
+    display: none;
+  }
+
+  .planet-group.above,
+  .planet-group.below {
+    margin: 0;
+  }
+
+  .career-title-label {
+    position: relative;
+    top: auto !important;
+    bottom: auto !important;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .sun-sphere {
+    width: 90px;
+    height: 90px;
+  }
+
+  .planet-sphere {
+    transform: scale(0.8);
+  }
+
+  .modal-content {
+    margin: 1rem;
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+  }
+
+  .modal-title-section {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resources-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .solar-career-container {
+    padding: 2rem 1rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+}

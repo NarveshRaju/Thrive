@@ -99,15 +99,15 @@ const InterviewPrep = () => {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 rounded-full px-4 py-2 mb-4"
           >
-            <Zap className="w-4 h-4 text-purple-400" />
-            <span className="text-sm font-bold text-purple-400">AI-Powered Interview Preparation</span>
+            <Zap className="w-4 h-4 text-white-400" />
+            <span className="text-sm font-bold text-white-400">AI-Powered Interview Preparation</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent"
+            className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-white to-orange-400 bg-clip-text text-transparent"
           >
             Master Your Interviews with AI
           </motion.h1>
@@ -126,9 +126,9 @@ const InterviewPrep = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             onClick={() => setShowModal(true)}
-            className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+            className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all"
           >
-            🎤 Start Practice Interview
+             Start Practice Interview
           </motion.button>
         </div>
 
