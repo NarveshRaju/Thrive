@@ -47,8 +47,16 @@ const ResumeLabPage = () => {
     if (ext.endsWith(".txt")) {
       const text = await file.text();
       setResumeHtml(`<p>${text.replace(/\n/g, "<br/>")}</p>`);
+    } else if (
+      ext.endsWith(".pdf") ||
+      ext.endsWith(".doc") ||
+      ext.endsWith(".docx")
+    ) {
+      alert(
+        "PDF / Word upload is supported in the UI, but parsing is not wired yet. For the demo, please upload a .txt version of your resume."
+      );
     } else {
-      alert("For demo, please upload a .txt resume. PDF/DOCX parsing will be added later.");
+      alert("Unsupported file type. Please upload .txt, .pdf, .doc, or .docx.");
     }
   };
 
@@ -97,11 +105,13 @@ const ResumeLabPage = () => {
           {mode === "upload" && (
             <div className="mt-2 mb-2 rounded-xl border border-dashed border-[#1F242D] bg-[#0B0D10] px-4 py-3 text-xs text-zinc-400">
               <p className="mb-2">
-                Upload your existing resume (use .txt for demo). The content will be loaded into the editor.
+                Upload your existing resume. For now, text files (.txt) will be
+                loaded directly. PDF/DOCX support will be added in the full
+                version.
               </p>
               <input
                 type="file"
-                accept=".txt"
+                accept=".txt,.pdf,.doc,.docx"
                 onChange={handleFileUpload}
                 className="text-xs"
               />

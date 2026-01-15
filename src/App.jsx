@@ -10,8 +10,9 @@ import { Projects } from "./pages/Projects";
 import { Contact } from "./pages/Contact";
 import { LoginPage } from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
-import ResumeEntryPage from './pages/ResumeEntryPage';
-import ResumeLabShell from './pages/ResumeLabShell';
+import ResumeEntryPage from "./pages/ResumeEntryPage";
+import ResumeLabShell from "./pages/ResumeLabShell";
+import CareerPersona from './pages/CareerPersona';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/career-persona" element={<CareerPersona />} />
           {/* Dashboard home */}
           <Route path="/dashboard" element={<Dashboard />} />
           {/* AI Resume Builder page */}

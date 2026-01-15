@@ -1,0 +1,113 @@
+.paper {
+    background: #ffffff;
+    color: #111827;
+    width: 210mm;
+    min-height: 297mm;
+    border-radius: 8px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+    padding: 18mm 15mm;
+    overflow: hidden;
+}
+
+.paperInner {
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* headings spacing only */
+.paperInner h1,
+.paperInner h2,
+.paperInner h3 {
+    margin: 0 0 4px;
+    font-family: "Space Grotesk", system-ui, sans-serif;
+}
+
+.paperInner p {
+    margin: 0 0 4px;
+}
+
+.paperInner ul {
+    margin: 0 0 4px 18px;
+    padding: 0;
+}
+
+/* Quill fonts */
+.ql-font-inter {
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ql-font-space-grotesk {
+    font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont,
+        sans-serif;
+}
+
+.ql-font-serif {
+    font-family: "Georgia", "Times New Roman", serif;
+}
+
+.ql-font-mono {
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+}
+
+/* --- Alignment: force it --- */
+.paperInner .ql-align-center {
+    display: block;
+    width: 100%;
+    text-align: center !important;
+}
+
+.paperInner .ql-align-right {
+    text-align: right !important;
+}
+
+.paperInner .ql-align-justify {
+    text-align: justify !important;
+}
+
+/* Numeric sizes */
+.ql-size-10px {
+    font-size: 10px;
+}
+
+.ql-size-12px {
+    font-size: 12px;
+}
+
+.ql-size-14px {
+    font-size: 14px;
+}
+
+.ql-size-16px {
+    font-size: 16px;
+}
+
+.ql-size-18px {
+    font-size: 18px;
+}
+
+.ql-size-20px {
+    font-size: 20px;
+}
+
+.ql-size-22px {
+    font-size: 22px;
+}
+
+.ql-size-24px {
+    font-size: 24px;
+}
+
+.ql-size-26px {
+    font-size: 26px;
+}
+
+.ql-size-28px {
+    font-size: 28px;
+}
+
+.ql-size-30px {
+    font-size: 30px;
+}

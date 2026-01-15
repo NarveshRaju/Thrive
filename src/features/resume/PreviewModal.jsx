@@ -3,6 +3,7 @@ import GlassCard from "../../components/ui/GlassCard";
 import SecondaryButton from "../../components/ui/SecondaryButton";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import html2pdf from "html2pdf.js";
+import "./PreviewModal.css";
 
 const PreviewModal = ({ resumeHtml, onClose }) => {
   const printRef = useRef(null);
@@ -35,9 +36,9 @@ const PreviewModal = ({ resumeHtml, onClose }) => {
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-[#1F242D] bg-white p-8">
-          <div ref={printRef}>
+          <div className="paper" ref={printRef}>
             <div
-              className="prose prose-sm max-w-none text-slate-900"
+              className="paperInner"
               dangerouslySetInnerHTML={{ __html: resumeHtml }}
             />
           </div>
