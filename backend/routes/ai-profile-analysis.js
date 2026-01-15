@@ -533,5 +533,228 @@ router.post('/update-learning-progress', authenticateUser, async (req, res) => {
   }
 });
 
+router.post('/generate-resume-from-profile', authenticateUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
+    console.log('🤖 Generating AI resume from user profile...');
+
+    // Gather all user data
+    const profileData = {
+      username: user.username,
+      email: user.email,
+      
+      // From onboarding
+      passion: user.careerProfile?.passion,
+      status: user.careerProfile?.status,
+      
+      // From resume upload
+      resumeData: user.resumeData,
+      
+      // From LinkedIn
+      linkedinData: user.linkedinData,
+      
+      // From AI insights
+      topCareer: user.aiInsights?.topCareerRecommendation || user.aiInsights?.careerPath,
+      strengths: user.aiInsights?.strengths,
+      skills: user.aiInsights?.recommendedSkills,
+      
+      // From learning progress
+      completedLevels: user.learningProgress?.completedLevels?.length || 0,
+      badges: user.learningProgress?.badges || [],
+      
+      // From interviews
+      interviewStats: user.interviewStats
+    };
+
+    const prompt = `You are an expert resume writer. Generate a professional, ATS-optimized resume using the user's data below.
+
+USER PROFILE:
+Name: ${profileData.username}
+Email: ${profileData.email}
+Career Goal: ${profileData.topCareer || 'Software Developer'}
+Passion: ${profileData.passion || 'Technology'}
+Status: ${profileData.status || 'Professional'}
+
+EXISTING RESUME DATA:
+${JSON.stringify(profileData.resumeData, null, 2)}
+
+LINKEDIN DATA:
+${JSON.stringify(profileData.linkedinData, null, 2)}
+
+AI INSIGHTS:
+- Strengths: ${profileData.strengths?.join(', ') || 'None'}
+- Recommended Skills: ${profileData.skills?.join(', ') || 'None'}
+
+LEARNING ACHIEVEMENTS:
+- Completed ${profileData.completedLevels} learning missions
+- Badges earned: ${profileData.badges.map(b => b.name).join(', ') || 'None'}
+
+INTERVIEW PERFORMANCE:
+- Total interviews: ${profileData.interviewStats?.totalInterviews || 0}
+- Average score: ${profileData.interviewStats?.averageScore || 0}%
+
+Generate a complete, professional resume with:
+
+1. **Full Name** - Use real name from LinkedIn or username
+2. **Professional Headline** - Compelling one-liner (e.g., "Full Stack Developer | React & Node.js Expert")
+3. **Contact Info** - Email, phone (generate realistic), LinkedIn URL, GitHub URL
+4. **Location** - City, State/Country
+5. **Professional Summary** - 3-4 sentences highlighting experience, skills, passion, and career goals
+6. **Skills** - Comma-separated list of 15-20 technical skills (prioritize those from LinkedIn + AI insights)
+7. **Work Experience** - If available from LinkedIn/resume, enhance it. If not, create 2-3 realistic projects as "Freelance/Personal Projects"
+   Format: "• Position at Company (Year-Year)\n• Achievement with metrics\n• Achievement with metrics"
+8. **Projects** - 3-4 impressive projects based on their skills/passion
+   Format: "• Project Name - Description\n• Tech stack: X, Y, Z\n• Impact: Quantified result"
+9. **Education** - From LinkedIn or create relevant degree for their career goal
+   Format: "• Degree, Institution (Year-Year)\n• GPA/Honors if applicable"
+
+IMPORTANT RULES:
+- Use bullet points (•) for lists
+- Include QUANTIFIED metrics (numbers, percentages, scale)
+- Make it ATS-friendly (no tables, simple formatting)
+- Sound professional but authentic
+- Use action verbs (Built, Led, Optimized, Developed)
+- If data is missing, intelligently infer from career goal and passion
+
+Return ONLY JSON:
+{
+  "fullName": "...",
+  "headline": "...",
+  "email": "...",
+  "phone": "...",
+  "linkedin": "...",
+  "github": "...",
+  "locationText": "...",
+  "summary": "...",
+  "skills": "...",
+  "experience": "...",
+  "projects": "...",
+  "education": "..."
+}`;
+
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash-exp",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json"
+      }
+    });
+
+    const result = await model.generateContent(prompt);
+    const resumeData = JSON.parse(result.response.text().trim());
+
+    console.log('✅ AI Resume generated successfully');
+
+    res.json({
+      success: true,
+      resumeData,
+      message: 'Resume generated from your profile data!'
+    });
+
+  } catch (error) {
+    console.error('❌ Resume generation error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to generate resume',
+      error: error.message 
+    });
+  }
+});
+
+// ===== AI RESUME ENHANCEMENT =====
+router.post('/enhance-resume-section', authenticateUser, async (req, res) => {
+  try {
+    const { section, currentContent, targetRole } = req.body;
+
+    const prompt = `You are a resume optimization expert. Enhance this resume section for maximum ATS impact.
+
+SECTION: ${section}
+TARGET ROLE: ${targetRole || 'Software Engineer'}
+CURRENT CONTENT:
+${currentContent}
+
+INSTRUCTIONS:
+- Make it ATS-friendly with relevant keywords
+- Use strong action verbs (Built, Led, Optimized, Developed, Architected)
+- Add QUANTIFIED metrics wherever possible
+- Keep bullet points concise (1-2 lines each)
+- Sound professional but authentic
+- For skills: add 5-10 more relevant skills for the target role
+- For experience: add measurable impact metrics
+- For summary: make it compelling and keyword-rich
+
+Return ONLY the enhanced content as plain text, ready to paste.`;
+
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+    const result = await model.generateContent(prompt);
+    const enhancedContent = result.response.text().trim();
+
+    res.json({
+      success: true,
+      enhancedContent
+    });
+
+  } catch (error) {
+    console.error('❌ Enhancement error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ===== SMART JOB DESCRIPTION ANALYZER =====
+router.post('/analyze-job-description', authenticateUser, async (req, res) => {
+  try {
+    const { jobDescription, currentResume } = req.body;
+
+    const prompt = `Analyze this job description and provide ATS optimization insights.
+
+JOB DESCRIPTION:
+${jobDescription}
+
+CURRENT RESUME:
+${JSON.stringify(currentResume, null, 2)}
+
+Analyze and return JSON with:
+{
+  "extractedSkills": ["skill1", "skill2", ...], // All required skills from JD
+  "matchedSkills": ["skill1", ...], // Skills user already has
+  "missingSkills": ["skill1", ...], // Critical skills user needs to add
+  "keyPhrases": ["phrase1", ...], // Important phrases to include (e.g., "cross-functional collaboration")
+  "suggestedImprovements": [
+    "Add 'cloud architecture' to skills section",
+    "Quantify team size in experience bullets",
+    ...
+  ],
+  "estimatedAtsScore": 75, // 0-100
+  "verdict": "Good Match" // or "Needs Improvement" or "Excellent Match"
+}`;
+
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const result = await model.generateContent(prompt);
+    const analysis = JSON.parse(result.response.text().trim());
+
+    res.json({
+      success: true,
+      ...analysis
+    });
+
+  } catch (error) {
+    console.error('❌ JD Analysis error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 export default router;
