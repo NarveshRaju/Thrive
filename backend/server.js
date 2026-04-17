@@ -108,11 +108,25 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
-  dbName: 'skillsphere'
+const MONGO_URI = process.env.MONGODB_URI;
+console.log('🔌 MongoDB URI:', MONGO_URI ? MONGO_URI.replace(/\/\/.*@/, '//***:***@') : '❌ NOT SET');
+
+mongoose.connect(MONGO_URI, {
+  dbName: 'skillsphere',
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
 })
   .then(() => console.log('✅ MongoDB Connected'))
   .catch((err) => console.error('❌ MongoDB Error:', err.message));
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected');
+});
 
 // Import routes after dotenv
 import interviewRoutes from './routes/interview.js';
