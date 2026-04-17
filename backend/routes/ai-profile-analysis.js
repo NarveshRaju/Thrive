@@ -1,18 +1,9 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
 
 const router = express.Router();
-
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY not configured');
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
 
 const getGroqClient = () => {
   return new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -163,7 +154,7 @@ Return ONLY this JSON structure:
   }
 });
 
-// ===== GENERATE CAREER PATHS (Groq primary, Gemini fallback) =====
+// ===== GENERATE CAREER PATHS (using Groq) =====
 router.post('/generate-complete-career-paths', authenticateUser, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
@@ -298,30 +289,8 @@ RULES:
       console.log('   ✅ Groq parsed successfully');
 
     } catch (groqError) {
-      console.error('   ⚠️ Groq failed:', groqError.message);
-
-      // Fallback to Gemini
-      try {
-        console.log('   Trying Gemini fallback...');
-        const genAI = getGeminiClient();
-        const model = genAI.getGenerativeModel({
-          model: "gemini-2.0-flash",
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-            responseMimeType: "application/json"
-          }
-        });
-
-        const result = await model.generateContent(careerPathPrompt);
-        const responseText = result.response.text();
-        aiCareerPaths = JSON.parse(responseText.trim());
-        console.log('   ✅ Gemini parsed successfully');
-
-      } catch (geminiError) {
-        console.error('   ❌ Gemini also failed:', geminiError.message);
-        throw new Error(`AI generation failed: Groq: ${groqError.message}, Gemini: ${geminiError.message}`);
-      }
+      console.error('   ❌ Groq failed:', groqError.message);
+      throw new Error(`AI generation failed: ${groqError.message}`);
     }
 
     // Validate response structure
@@ -376,7 +345,7 @@ RULES:
     });
   }
 });
-// ===== GENERATE DYNAMIC LEARNING PATH (using Gemini) =====
+// ===== GENERATE DYNAMIC LEARNING PATH (using Groq) =====
 router.post('/generate-learning-path', authenticateUser, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
@@ -427,7 +396,7 @@ PASSION: ${userProfile.passion}
 
 Create 6-8 progressive levels. Each level = 1 planet in a solar system.
 
-Return ONLY JSON:
+Return ONLY valid JSON, no markdown, no code blocks:
 {
   "pathName": "Journey to ${userProfile.targetCareer}",
   "personalizedMessage": "Message to ${userProfile.name}",
@@ -462,18 +431,20 @@ Planet progression: Mercury (blue), Venus (gray), Earth (green), Mars (red), Jup
 Difficulties: Easy, Easy, Medium, Medium, Hard, Hard, Expert
 Include 5 questions per level`;
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 16384,
-        responseMimeType: "application/json"
-      }
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are a career learning expert. Return only valid JSON, no markdown code blocks.' },
+        { role: 'user', content: learningPathPrompt }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.8,
+      max_tokens: 8000
     });
 
-    const result = await model.generateContent(learningPathPrompt);
-    const learningPath = JSON.parse(result.response.text().trim());
+    const responseText = completion.choices[0].message.content.trim();
+    const jsonText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const learningPath = JSON.parse(jsonText);
 
     learningPath.generatedAt = new Date();
     learningPath.skillLevel = skillLevel;
@@ -702,18 +673,20 @@ Return ONLY JSON:
   "education": "..."
 }`;
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-        responseMimeType: "application/json"
-      }
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are an expert resume writer. Return only valid JSON, no markdown code blocks.' },
+        { role: 'user', content: prompt }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 4000
     });
 
-    const result = await model.generateContent(prompt);
-    const resumeData = JSON.parse(result.response.text().trim());
+    const responseText = completion.choices[0].message.content.trim();
+    const jsonText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const resumeData = JSON.parse(jsonText);
 
     console.log('✅ AI Resume generated successfully');
 
@@ -757,11 +730,18 @@ INSTRUCTIONS:
 
 Return ONLY the enhanced content as plain text, ready to paste.`;
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are a resume optimization expert. Return only the enhanced content as plain text.' },
+        { role: 'user', content: prompt }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 2000
+    });
 
-    const result = await model.generateContent(prompt);
-    const enhancedContent = result.response.text().trim();
+    const enhancedContent = completion.choices[0].message.content.trim();
 
     res.json({
       success: true,
@@ -802,16 +782,20 @@ Analyze and return JSON with:
   "verdict": "Good Match" // or "Needs Improvement" or "Excellent Match"
 }`;
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are an ATS optimization expert. Return only valid JSON, no markdown code blocks.' },
+        { role: 'user', content: prompt }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 3000
     });
 
-    const result = await model.generateContent(prompt);
-    const analysis = JSON.parse(result.response.text().trim());
+    const responseText = completion.choices[0].message.content.trim();
+    const jsonText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const analysis = JSON.parse(jsonText);
 
     res.json({
       success: true,
