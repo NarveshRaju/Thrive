@@ -1,400 +1,411 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars, Float, PerspectiveCamera } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import DashboardNavbar from '../components/layout/DashboardNavbar';
-import { 
-  Sparkles, X, Info, Trophy, Loader2, AlertCircle, ArrowLeft,
-  Lock, CheckCircle2, Clock, Target, Award, ChevronRight
+import {
+  Sparkles, X, Trophy, Loader2, AlertCircle, ArrowLeft,
+  Lock, CheckCircle2, Clock, Target, Award, ChevronRight,
+  BookOpen, Play, Zap, Star, Brain, Rocket, MapPin
 } from 'lucide-react';
 
-const API_URL = 'https://thrive-3r8o.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://thrive-3r8o.onrender.com/api';
 
-// ===== 3D COMPONENTS =====
-const PlanetHologram = ({ color, active, locked, completed }) => {
-  const mesh = useRef();
-  
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    if (mesh.current) {
-      mesh.current.rotation.y = t * 0.3;
-      mesh.current.rotation.x = Math.sin(t * 0.5) * 0.1;
-    }
-  });
-
-  const colorMap = {
-    'from-blue-500': '#3b82f6',
-    'from-gray-500': '#6b7280',
-    'from-green-500': '#22c55e',
-    'from-red-500': '#ef4444',
-    'from-orange-500': '#f97316',
-    'from-purple-500': '#a855f7',
-    'from-yellow-500': '#eab308',
-    'from-cyan-500': '#06b6d4'
-  };
-
-  const planetColor = colorMap[color?.split(' ')[0]] || '#3b82f6';
-
-  return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-      <group>
-        <mesh ref={mesh}>
-          <sphereGeometry args={[1.6, 32, 32]} />
-          <meshStandardMaterial 
-            color={planetColor}
-            emissive={planetColor}
-            emissiveIntensity={active ? 1.5 : locked ? 0.1 : 0.6}
-            wireframe={true}
-            transparent
-            opacity={locked ? 0.2 : active ? 0.9 : 0.6}
-          />
-        </mesh>
-        {!locked && (
-          <mesh>
-            <sphereGeometry args={[1.8, 32, 32]} />
-            <meshBasicMaterial
-              color={planetColor}
-              transparent
-              opacity={active ? 0.3 : 0.1}
-              side={2}
-            />
-          </mesh>
-        )}
-        {active && <pointLight color={planetColor} intensity={3} distance={8} />}
-        {completed && (
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[2, 0.05, 16, 100]} />
-            <meshStandardMaterial
-              color="#06b6d4"
-              emissive="#06b6d4"
-              emissiveIntensity={1}
-            />
-          </mesh>
-        )}
-      </group>
-    </Float>
-  );
+// Color map for planets
+const PLANET_COLORS = {
+  Mercury: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400', accent: '#3b82f6', glow: 'shadow-blue-500/20' },
+  Venus: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', accent: '#f59e0b', glow: 'shadow-amber-500/20' },
+  Earth: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', accent: '#22c55e', glow: 'shadow-emerald-500/20' },
+  Mars: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400', accent: '#ef4444', glow: 'shadow-red-500/20' },
+  Jupiter: { bg: 'bg-orange-500/10', border: 'border-orange-500/20', text: 'text-orange-400', accent: '#f97316', glow: 'shadow-orange-500/20' },
+  Saturn: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400', accent: '#a855f7', glow: 'shadow-purple-500/20' },
+  Uranus: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', accent: '#06b6d4', glow: 'shadow-cyan-500/20' },
+  Neptune: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400', accent: '#6366f1', glow: 'shadow-indigo-500/20' },
 };
 
-const RocketModel = () => {
-  const rocketRef = useRef();
-  useFrame(() => { 
-    if (rocketRef.current) {
-      rocketRef.current.position.y += 0.08;
-      rocketRef.current.rotation.y += 0.02;
-    }
-  });
-  
-  return (
-    <group ref={rocketRef} position={[0, -4, 0]}>
-      <mesh position={[0, 0, 0]}>
-        <coneGeometry args={[0.5, 2, 8]} />
-        <meshStandardMaterial color="#ff6b35" emissive="#ff6b35" emissiveIntensity={1.5} />
-      </mesh>
-      <mesh position={[0.3, -0.8, 0]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[0.4, 0.1, 0.8]} />
-        <meshStandardMaterial color="#1e293b" />
-      </mesh>
-      <mesh position={[-0.3, -0.8, 0]} rotation={[0, 0, -Math.PI / 4]}>
-        <boxGeometry args={[0.4, 0.1, 0.8]} />
-        <meshStandardMaterial color="#1e293b" />
-      </mesh>
-      <pointLight position={[0, -1.5, 0]} color="#ff6b35" intensity={5} distance={3} />
-    </group>
-  );
+const getColors = (planetName) => PLANET_COLORS[planetName] || PLANET_COLORS.Mercury;
+
+const DIFFICULTY_COLORS = {
+  Easy: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  Medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  Hard: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  Expert: 'bg-red-500/15 text-red-400 border-red-500/30',
 };
 
-// ===== PLANET CARD =====
-const PlanetCard = ({ level, index, onClick, isActive }) => {
-  const [isHovered, setIsHovered] = useState(false);
+// ===== LEVEL CARD =====
+const LevelCard = ({ level, index, onClick, progress }) => {
+  const isLocked = level.id > (progress?.unlockedLevel || 1);
+  const isCompleted = progress?.completedLevels?.includes(level.id);
+  const c = getColors(level.planetName);
+  const score = progress?.levelScores?.find(s => s.levelId === level.id)?.score;
 
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: index * 0.15, type: 'spring' }}
-      className="relative flex flex-col items-center"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.08, type: 'spring', stiffness: 100 }}
+      onClick={isLocked ? undefined : onClick}
+      className={`relative group ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
     >
-      <div 
-        onClick={level.locked ? undefined : onClick}
-        className={`w-64 h-64 ${level.locked ? 'cursor-not-allowed' : 'cursor-pointer'} relative`}
-      >
-        <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} intensity={1} />
-          <Suspense fallback={null}>
-            <PlanetHologram 
-              color={level.color}
-              active={isActive}
-              locked={level.locked}
-              completed={level.completed}
-            />
-          </Suspense>
-        </Canvas>
-
-        {level.locked && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-black/70 backdrop-blur-sm rounded-full p-4">
-              <Lock className="w-12 h-12 text-gray-400" />
+      <div className={`${c.bg} border ${c.border} rounded-2xl p-5 transition-all duration-300 ${
+        !isLocked ? `hover:shadow-lg ${c.glow} hover:scale-[1.02]` : ''
+      }`}>
+        {/* Top row */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${c.bg} border ${c.border} flex items-center justify-center`}>
+              {isLocked ? (
+                <Lock className="w-4 h-4 text-gray-500" />
+              ) : isCompleted ? (
+                <CheckCircle2 className={`w-5 h-5 ${c.text}`} />
+              ) : (
+                <span className={`text-sm font-bold ${c.text}`}>{level.id}</span>
+              )}
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm">{level.name}</h3>
+              <p className="text-gray-500 text-[10px] uppercase tracking-widest">{level.planetName}</p>
             </div>
           </div>
-        )}
 
-        {level.completed && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-4 right-4 bg-cyan-500 rounded-full p-2 shadow-lg"
-          >
-            <CheckCircle2 className="w-8 h-8 text-white" />
-          </motion.div>
-        )}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFFICULTY_COLORS[level.difficulty] || DIFFICULTY_COLORS.Easy}`}>
+            {level.difficulty}
+          </span>
+        </div>
+
+        {/* Subtitle */}
+        <p className="text-xs text-gray-400 mb-3">{level.subtitle || level.description}</p>
+
+        {/* Topics */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {(level.topics || []).slice(0, 4).map((topic, i) => (
+            <span key={i} className={`text-[10px] px-2 py-0.5 rounded-lg ${c.bg} ${c.text} font-medium`}>
+              {topic}
+            </span>
+          ))}
+          {(level.topics || []).length > 4 && (
+            <span className="text-[10px] text-gray-500">+{level.topics.length - 4} more</span>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{level.estimatedTime}</span>
+            <span className="flex items-center gap-1"><Award className="w-3 h-3 text-amber-400" />{level.badge}</span>
+          </div>
+
+          {isCompleted && score !== undefined && (
+            <span className={`text-xs font-bold ${score >= 70 ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {score}%
+            </span>
+          )}
+
+          {!isLocked && !isCompleted && (
+            <ChevronRight className={`w-4 h-4 ${c.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
+          )}
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.15 + 0.2 }}
-        className="mt-4 text-center"
-      >
-        <h3 className="text-2xl font-bold text-white mb-1 uppercase tracking-wider">
-          {level.name}
-        </h3>
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">
-          {level.subtitle}
-        </p>
-        
-        <div className={`
-          inline-block px-4 py-1 rounded-full text-xs font-black uppercase tracking-wide
-          ${level.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-            level.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-            level.difficulty === 'Hard' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-            'bg-red-500/20 text-red-400 border border-red-500/30'
-          }
-        `}>
-          {level.difficulty}
-        </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {isHovered && !level.locked && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute top-full mt-4 w-96 bg-black/80 backdrop-blur-3xl rounded-3xl p-6 border border-white/20 shadow-2xl z-50 pointer-events-none"
-          >
-            <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-cyan-400" />
-              Mission Briefing
-            </h4>
-            
-            <div className="mb-4">
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Topics Covered</p>
-              <div className="space-y-2">
-                {level.topics?.map((topic, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_cyan]" />
-                    <span>{topic}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 mb-4 text-xs text-gray-400 font-bold">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-cyan-400" />
-                <span>{level.estimatedTime}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-yellow-400" />
-                <span>{level.badge}</span>
-              </div>
-            </div>
-
-            {level.project && (
-              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3">
-                <p className="text-xs text-cyan-400 font-bold mb-1">Project Challenge</p>
-                <p className="text-xs text-gray-300">{level.project}</p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {isActive && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="mt-6 bg-cyan-500/20 border border-cyan-500/50 rounded-2xl px-6 py-3"
-        >
-          <button 
-            onClick={onClick}
-            className="text-cyan-400 font-black uppercase text-sm tracking-wider hover:text-cyan-300 transition-colors"
-          >
-            📡 Enter Archives →
-          </button>
-        </motion.div>
+      {/* Connection line to next */}
+      {index < 7 && (
+        <div className="hidden lg:block absolute -bottom-6 left-1/2 -translate-x-1/2 w-px h-6 bg-gradient-to-b from-white/10 to-transparent" />
       )}
     </motion.div>
   );
 };
 
-// ===== ASSESSMENT COMPONENT =====
-const Assessment = ({ mission, questions, onComplete }) => {
+// ===== ASSESSMENT =====
+const Assessment = ({ mission, questions, onComplete, onBack }) => {
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [mistakes, setMistakes] = useState([]);
-  const [timer, setTimer] = useState(300); // 5 minutes
+  const [selected, setSelected] = useState(null);
+  const [showResult, setShowResult] = useState(false);
 
-  useEffect(() => {
-    const interval = setInterval(() => setTimer(t => (t > 0 ? t - 1 : 0)), 1000);
-    return () => clearInterval(interval);
-  }, []);
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#030303] flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+          <p className="text-white text-lg font-bold mb-2">No questions available</p>
+          <p className="text-gray-400 mb-6">This level's assessment isn't ready yet</p>
+          <button onClick={onBack} className="px-6 py-3 bg-amber-500 text-black rounded-xl font-bold">
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQ = questions[idx];
 
   const handleAnswer = (selectedIdx) => {
-    const isCorrect = selectedIdx === questions[idx].correctAnswer;
-    
-    if (!isCorrect) {
-      setMistakes([...mistakes, {
-        question: questions[idx].question,
-        userAnswer: selectedIdx,
-        correctAnswer: questions[idx].correctAnswer,
-        tip: questions[idx].tip
-      }]);
-    }
+    setSelected(selectedIdx);
+    setShowResult(true);
 
+    const isCorrect = selectedIdx === currentQ.correctAnswer;
     const newScore = isCorrect ? score + 1 : score;
+    const newMistakes = isCorrect ? mistakes : [...mistakes, {
+      question: currentQ.question,
+      userAnswer: currentQ.options?.[selectedIdx] || 'N/A',
+      correctAnswer: currentQ.options?.[currentQ.correctAnswer] || 'N/A',
+      tip: currentQ.tip
+    }];
 
-    if (idx < questions.length - 1) {
-      setScore(newScore);
-      setIdx(idx + 1);
-    } else {
-      const finalScore = Math.round(((isCorrect ? newScore + 1 : newScore) / questions.length) * 100);
-      onComplete(finalScore, isCorrect ? mistakes : [...mistakes, {
-        question: questions[idx].question,
-        userAnswer: selectedIdx,
-        correctAnswer: questions[idx].correctAnswer,
-        tip: questions[idx].tip
-      }]);
-    }
+    setTimeout(() => {
+      if (idx < questions.length - 1) {
+        setScore(newScore);
+        setMistakes(newMistakes);
+        setIdx(idx + 1);
+        setSelected(null);
+        setShowResult(false);
+      } else {
+        const finalScore = Math.round((newScore / questions.length) * 100);
+        onComplete(finalScore, newMistakes);
+      }
+    }, 1200);
   };
 
+  const progress = ((idx) / questions.length) * 100;
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-2xl">
-      <div className="w-full max-w-3xl bg-white/[0.03] border border-white/10 p-12 rounded-[3rem] shadow-2xl">
-        <div className="flex justify-between mb-8 text-xs font-black uppercase tracking-widest">
-          <span className="text-cyan-500">Mission: {mission.name}</span>
-          <span className="text-gray-400">Question {idx + 1}/{questions.length}</span>
-          <span className="text-orange-500">
-            Time: {Math.floor(timer/60)}:{(timer%60).toString().padStart(2,'0')}
-          </span>
-        </div>
+    <div className="fixed inset-0 z-50 bg-[#030303] flex flex-col">
+      <DashboardNavbar />
+      <div className="flex-1 flex items-center justify-center p-6 pt-24">
+        <div className="w-full max-w-2xl">
+          {/* Progress bar */}
+          <div className="flex items-center justify-between mb-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
+            <span>{mission.name}</span>
+            <span>Question {idx + 1} / {questions.length}</span>
+          </div>
+          <div className="w-full h-1 bg-white/5 rounded-full mb-8 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
 
-        <h3 className="text-3xl font-bold mb-10 text-white leading-tight">
-          {questions[idx].question}
-        </h3>
+          {/* Question */}
+          <motion.h2
+            key={idx}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold text-white mb-8 leading-relaxed"
+          >
+            {currentQ.question}
+          </motion.h2>
 
-        <div className="grid gap-4">
-          {questions[idx].options.map((option, i) => (
-            <button
-              key={i}
-              onClick={() => handleAnswer(i)}
-              className="p-6 text-left bg-white/5 border border-white/10 rounded-2xl hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-all text-white font-medium"
-            >
-              <span className="text-cyan-400 font-black mr-3">{String.fromCharCode(65 + i)}.</span>
-              {option}
-            </button>
-          ))}
-        </div>
+          {/* Options */}
+          <div className="space-y-3">
+            {currentQ.options?.map((option, i) => {
+              let optionClass = 'bg-white/[0.03] border-white/10 hover:border-amber-500/40 hover:bg-amber-500/5';
+              if (showResult) {
+                if (i === currentQ.correctAnswer) {
+                  optionClass = 'bg-emerald-500/10 border-emerald-500/40';
+                } else if (i === selected && i !== currentQ.correctAnswer) {
+                  optionClass = 'bg-red-500/10 border-red-500/40';
+                } else {
+                  optionClass = 'bg-white/[0.02] border-white/5 opacity-40';
+                }
+              }
 
-        <div className="mt-8 flex justify-between items-center">
-          <div className="flex gap-2">
+              return (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => !showResult && handleAnswer(i)}
+                  disabled={showResult}
+                  className={`w-full text-left p-4 border rounded-xl transition-all ${optionClass}`}
+                >
+                  <span className="text-amber-400 font-bold mr-3">{String.fromCharCode(65 + i)}.</span>
+                  <span className="text-white text-sm">{option}</span>
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Tip on wrong answer */}
+          <AnimatePresence>
+            {showResult && selected !== currentQ.correctAnswer && currentQ.tip && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl"
+              >
+                <p className="text-xs text-amber-400 font-bold mb-1">💡 Tip</p>
+                <p className="text-sm text-gray-300">{currentQ.tip}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Score tracker */}
+          <div className="flex items-center gap-2 mt-6">
             {questions.map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full ${
-                  i < idx ? 'bg-cyan-400' : i === idx ? 'bg-white' : 'bg-gray-700'
-                }`}
-              />
+              <div key={i} className={`w-2 h-2 rounded-full ${
+                i < idx ? 'bg-amber-400' : i === idx ? 'bg-white' : 'bg-gray-700'
+              }`} />
             ))}
           </div>
-          <p className="text-gray-400 text-sm">Score: {score}/{questions.length}</p>
         </div>
       </div>
     </div>
   );
 };
 
-// ===== REPORT COMPONENT =====
+// ===== REPORT =====
 const Report = ({ score, mistakes, mission, onRetry, onContinue }) => {
   const passed = score >= 70;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-6"
-    >
-      <div className="max-w-3xl w-full p-12 rounded-[4rem] border border-white/10 bg-white/[0.02] backdrop-blur-3xl text-center">
-        <div className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center mb-8 ${
-          passed ? 'bg-cyan-500/20 border-4 border-cyan-400' : 'bg-red-500/20 border-4 border-red-400'
+    <div className="fixed inset-0 z-50 bg-[#030303] flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-xl w-full bg-white/[0.03] border border-white/10 rounded-2xl p-8 text-center"
+      >
+        <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-6 ${
+          passed ? 'bg-emerald-500/20 border-2 border-emerald-400' : 'bg-red-500/20 border-2 border-red-400'
         }`}>
-          <Trophy size={64} className={passed ? "text-cyan-400" : "text-red-400"} />
+          <Trophy className={`w-12 h-12 ${passed ? 'text-emerald-400' : 'text-red-400'}`} />
         </div>
 
-        <h3 className="text-6xl font-bold text-white mb-2">{score}%</h3>
-        <p className="text-gray-400 mb-4 tracking-widest uppercase text-sm font-black">
+        <h3 className="text-5xl font-bold text-white mb-2">{score}%</h3>
+        <p className={`text-sm font-bold uppercase tracking-widest mb-1 ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
           {passed ? '✅ Mission Complete' : '❌ Mission Failed'}
         </p>
-        <p className="text-gray-500 mb-10 text-xs uppercase tracking-widest">
-          Diagnostic Report: {mission.name}
-        </p>
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-8">{mission.name}</p>
+
+        {passed && mission.badge && (
+          <div className="p-5 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-6">
+            <Award className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+            <p className="text-xs text-gray-400 mb-1">Badge Earned</p>
+            <p className="text-white font-bold text-lg">{mission.badge}</p>
+          </div>
+        )}
 
         {mistakes.length > 0 && (
-          <div className="text-left space-y-4 mb-10 max-h-80 overflow-y-auto pr-4">
-            <p className="text-red-400 text-xs font-black uppercase tracking-widest mb-4">
-              🔍 Areas for Improvement ({mistakes.length} mistakes)
+          <div className="text-left space-y-3 mb-6 max-h-48 overflow-y-auto">
+            <p className="text-[10px] text-red-400 uppercase tracking-widest font-bold">
+              Areas for Improvement ({mistakes.length})
             </p>
             {mistakes.map((m, i) => (
-              <div key={i} className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                <p className="text-white text-sm font-bold mb-2">❌ {m.question}</p>
-                <p className="text-gray-400 text-xs mb-2">
-                  Your answer: <span className="text-red-400">{m.options?.[m.userAnswer] || 'N/A'}</span>
+              <div key={i} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
+                <p className="text-white text-xs font-bold mb-1">❌ {m.question}</p>
+                <p className="text-[10px] text-gray-400">
+                  Your answer: <span className="text-red-400">{m.userAnswer}</span>
+                  {' → '}<span className="text-emerald-400">{m.correctAnswer}</span>
                 </p>
-                <p className="text-cyan-400 text-xs italic">💡 {m.tip}</p>
+                {m.tip && <p className="text-[10px] text-amber-400 mt-1">💡 {m.tip}</p>}
               </div>
             ))}
           </div>
         )}
 
-        {passed && (
-          <div className="p-8 bg-cyan-500/10 border border-cyan-500/20 rounded-3xl mb-10">
-            <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-            <p className="text-cyan-400 font-bold text-lg mb-2">🎉 Badge Earned!</p>
-            <p className="text-white text-2xl font-black uppercase tracking-wide">{mission.badge}</p>
-          </div>
-        )}
-
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button
             onClick={onRetry}
-            className="flex-1 bg-white/5 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-white/10 transition-all"
+            className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-sm transition-all"
           >
-            🔄 Retry Mission
+            🔄 Retry
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 bg-cyan-500 text-black py-5 rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-cyan-400 transition-all"
+            className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-bold text-sm transition-all"
           >
-            {passed ? '🚀 Next Mission' : '🗺️ Mission Map'}
+            {passed ? '🚀 Continue' : '🗺️ Back to Map'}
           </button>
         </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ===== MISSION BRIEFING =====
+const MissionBriefing = ({ mission, onStart, onBack }) => {
+  const c = getColors(mission.planetName);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#030303] overflow-y-auto">
+      <DashboardNavbar />
+      <div className="pt-24 pb-16 px-4 md:px-8 max-w-4xl mx-auto">
+        <button onClick={onBack} className="flex items-center gap-1 text-xs text-gray-400 hover:text-white mb-6 transition-colors">
+          <ArrowLeft className="w-3 h-3" /> Back to Map
+        </button>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className={`w-10 h-10 rounded-xl ${c.bg} border ${c.border} flex items-center justify-center`}>
+            <span className={`font-bold ${c.text}`}>{mission.id}</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{mission.name}</h1>
+            <p className="text-xs text-gray-400 uppercase tracking-widest">{mission.planetName} • {mission.difficulty}</p>
+          </div>
+        </div>
+
+        <p className="text-gray-400 mt-4 mb-8 leading-relaxed">{mission.description}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Video */}
+          {mission.videoId && (
+            <div className="md:col-span-2 bg-white/[0.03] border border-white/10 rounded-xl overflow-hidden aspect-video">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${mission.videoId}?rel=0&modestbranding=1`}
+                title="Mission Briefing"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+
+          {/* Topics */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-amber-400" /> Topics Covered
+            </h3>
+            <div className="space-y-2">
+              {(mission.topics || []).map((topic, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${c.text.replace('text-', 'bg-')}`} />
+                  <span className="text-sm text-gray-300">{topic}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5 space-y-4">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Estimated Time</p>
+              <p className="text-sm text-white font-bold flex items-center gap-2"><Clock className="w-4 h-4 text-amber-400" />{mission.estimatedTime}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Badge Reward</p>
+              <p className="text-sm text-white font-bold flex items-center gap-2"><Award className="w-4 h-4 text-amber-400" />{mission.badge}</p>
+            </div>
+            {mission.project && (
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Project Challenge</p>
+                <p className="text-sm text-amber-300">{mission.project}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <button
+          onClick={onStart}
+          className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+        >
+          <Zap className="w-5 h-5" /> Start Assessment ({mission.assessment?.length || 0} Questions)
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -405,58 +416,58 @@ const LearningGuide = () => {
   const [learningPath, setLearningPath] = useState(null);
   const [progress, setProgress] = useState(null);
   const [activeMission, setActiveMission] = useState(null);
-  const [selectedMissionId, setSelectedMissionId] = useState(null);
   const [error, setError] = useState(null);
-  const [assessmentStartTime, setAssessmentStartTime] = useState(null);
   const [lastScore, setLastScore] = useState(0);
   const [lastMistakes, setLastMistakes] = useState([]);
 
-  useEffect(() => {
-    loadLearningPath();
-  }, []);
+  useEffect(() => { loadLearningPath(); }, []);
 
   const loadLearningPath = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+      if (!token) { navigate('/login'); return; }
+
+      // Try to get existing path
       const res = await fetch(`${API_URL}/profile/learning-path`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (res.ok) {
         const data = await res.json();
-        setLearningPath(data);
-        setProgress(data.progress);
-        setView('guide');
-      } else {
-        console.log('🤖 Generating learning path...');
-        const genRes = await fetch(`${API_URL}/profile/generate-learning-path`, {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const genData = await genRes.json();
-        if (genData.success) {
-          setLearningPath(genData);
-          setProgress(genData.progress);
-          setView('guide');
-        } else {
-          throw new Error(genData.message);
+        if (data.success && data.levels?.length > 0) {
+          setLearningPath(data);
+          setProgress(data.progress || { unlockedLevel: 1, completedLevels: [], levelScores: [] });
+          setView('map');
+          return;
         }
       }
+
+      // Generate new path
+      setView('generating');
+      const genRes = await fetch(`${API_URL}/profile/generate-learning-path`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const genData = await genRes.json();
+      if (genData.success && genData.levels?.length > 0) {
+        setLearningPath(genData);
+        setProgress(genData.progress || { unlockedLevel: 1, completedLevels: [], levelScores: [] });
+        setView('map');
+      } else {
+        throw new Error(genData.message || 'Failed to generate learning path');
+      }
     } catch (err) {
-      console.error('❌ Error:', err);
+      console.error('Learning path error:', err);
       setError(err.message);
       setView('error');
     }
   };
 
   const handleCompleteAssessment = async (finalScore, mistakes) => {
-    const timeSpent = assessmentStartTime ? Math.floor((Date.now() - assessmentStartTime) / 60000) : 5;
-    
     setLastScore(finalScore);
     setLastMistakes(mistakes);
 
@@ -472,7 +483,7 @@ const LearningGuide = () => {
           levelId: activeMission.id,
           score: finalScore,
           mistakes,
-          timeSpent
+          timeSpent: 5
         })
       });
 
@@ -481,267 +492,142 @@ const LearningGuide = () => {
         setProgress(data.progress);
       }
     } catch (err) {
-      console.error('Error updating progress:', err);
+      console.error('Progress update error:', err);
     }
 
     setView('report');
   };
 
-  if (view === 'loading') {
+  // LOADING
+  if (view === 'loading' || view === 'generating') {
     return (
       <div className="min-h-screen bg-[#030303] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-cyan-400 animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Initializing Mission Control...</p>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+            <Loader2 className="w-12 h-12 text-amber-500 mx-auto" />
+          </motion.div>
+          <p className="text-white text-lg font-bold mt-4">
+            {view === 'generating' ? 'AI is building your learning path...' : 'Loading...'}
+          </p>
+          <p className="text-gray-500 text-sm mt-1">This may take a moment</p>
         </div>
       </div>
     );
   }
 
+  // ERROR
   if (view === 'error') {
     return (
       <div className="min-h-screen bg-[#030303] flex items-center justify-center p-6">
         <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-white text-2xl font-bold mb-2">System Error</h2>
+          <AlertCircle className="w-14 h-14 text-red-500 mx-auto mb-4" />
+          <h2 className="text-white text-xl font-bold mb-2">Something went wrong</h2>
           <p className="text-gray-400 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-cyan-500 rounded-xl font-bold"
-          >
-            Restart System
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => navigate('/dashboard')} className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl font-bold text-sm">
+              Dashboard
+            </button>
+            <button onClick={() => { setView('loading'); loadLearningPath(); }} className="px-6 py-3 bg-amber-500 text-black rounded-xl font-bold text-sm">
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Calc stats
+  const totalLevels = learningPath?.levels?.length || 0;
+  const completedCount = progress?.completedLevels?.length || 0;
+  const progressPercent = totalLevels > 0 ? Math.round((completedCount / totalLevels) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-[#030303] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#030303] text-white">
+      {/* Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute top-0 left-1/2 w-[600px] h-[600px] bg-amber-600/3 rounded-full blur-[150px] -translate-x-1/2" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-500/3 rounded-full blur-[120px]" />
+      </div>
+
       <DashboardNavbar />
 
-      <AnimatePresence mode="wait">
-        {/* GUIDE */}
-        {view === 'guide' && (
-          <motion.main exit={{ opacity: 0 }} className="pt-32 pb-20 px-4 max-w-6xl mx-auto">
-            <header className="text-center mb-16">
-              <span className="text-xs font-black text-cyan-500 uppercase tracking-[0.3em] mb-4 block">
-                AI-Powered Learning System
-              </span>
-              <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                {learningPath.pathName}
-              </h1>
-              <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-lg leading-relaxed">
-                {learningPath.personalizedMessage}
-              </p>
-              <div className="flex items-center justify-center gap-8 text-sm">
-                <span className="flex items-center gap-2 text-cyan-400 font-bold">
-                  <Clock className="w-5 h-5" />
-                  {learningPath.estimatedTotalTime}
-                </span>
-                <span className="flex items-center gap-2 text-purple-400 font-bold">
-                  <Target className="w-5 h-5" />
-                  {learningPath.levels.length} Missions
-                </span>
-                <span className="flex items-center gap-2 text-green-400 font-bold">
-                  <Trophy className="w-5 h-5" />
-                  {progress.completedLevels.length} Completed
-                </span>
-              </div>
-            </header>
-
-            <button
-              onClick={() => setView('launch')}
-              className="mx-auto block bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-16 py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-lg hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/50 transition-all"
-            >
-              🚀 Launch Mission Control
-            </button>
-          </motion.main>
-        )}
-
-        {/* LAUNCH */}
-        {view === 'launch' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onAnimationComplete={() => setTimeout(() => setView('map'), 3500)}
-            className="fixed inset-0 z-[100] bg-black"
-          >
-            <Canvas>
-              <PerspectiveCamera makeDefault position={[0, 0, 80]} fov={70} />
-              <Stars radius={150} count={10000} factor={8} fade speed={2} />
-              <ambientLight intensity={0.5} />
-              <pointLight position={[10, 10, 10]} intensity={2} />
-              <Suspense fallback={null}>
-                <RocketModel />
-              </Suspense>
-            </Canvas>
-            
-            <div className="absolute bottom-20 left-0 right-0 text-center">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                className="text-4xl font-bold text-white mb-2"
-              >
-                LAUNCHING...
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
-                className="text-cyan-400 text-sm uppercase tracking-widest"
-              >
-                Entering Mission Space
-              </motion.p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* MAP */}
+      {/* MAP VIEW */}
+      <AnimatePresence>
         {view === 'map' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="pt-32 px-8 min-h-screen relative pb-20"
-          >
-            <div className="text-center mb-20">
-              <h2 className="text-5xl font-bold tracking-[0.2em] mb-4 text-white">
-                MISSION CONTROL
-              </h2>
-              <p className="text-gray-400 text-lg">Select your next destination</p>
+          <main className="relative z-10 pt-24 pb-16 px-4 md:px-8 max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="mb-10">
+              <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1 text-xs text-gray-400 hover:text-white mb-4 transition-colors">
+                <ArrowLeft className="w-3 h-3" /> Back to Dashboard
+              </button>
+
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                  <p className="text-xs text-amber-400 font-bold mb-1 flex items-center gap-2">
+                    <Rocket className="w-4 h-4" /> AI Learning Path
+                  </p>
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                    {learningPath?.pathName || 'Your Learning Journey'}
+                  </h1>
+                  <p className="text-gray-400 mt-2 max-w-xl text-sm">
+                    {learningPath?.personalizedMessage || 'A personalized path to your dream career'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm font-bold">{completedCount}/{totalLevels}</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm font-bold">{learningPath?.estimatedTotalTime || '8-12 months'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>{progressPercent}%</span>
+                </div>
+                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-24 max-w-7xl mx-auto">
-              {learningPath.levels.map((level, index) => (
-                <PlanetCard
+            {/* Level Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(learningPath?.levels || []).map((level, index) => (
+                <LevelCard
                   key={level.id}
-                  level={{
-                    ...level,
-                    locked: level.id > progress.unlockedLevel,
-                    completed: progress.completedLevels.includes(level.id)
-                  }}
+                  level={level}
                   index={index}
-                  isActive={selectedMissionId === level.id}
+                  progress={progress}
                   onClick={() => {
-                    if (level.id <= progress.unlockedLevel) {
-                      setSelectedMissionId(level.id);
-                      setActiveMission(level);
-                      setView('mission');
-                    }
+                    setActiveMission(level);
+                    setView('mission');
                   }}
                 />
               ))}
             </div>
-
-            <div className="fixed inset-0 -z-10">
-              <Canvas>
-                <Stars radius={100} depth={50} count={7000} factor={5} fade speed={0.5} />
-              </Canvas>
-            </div>
-
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="fixed top-24 left-8 flex items-center gap-2 px-6 py-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl hover:bg-white/5 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-bold">Dashboard</span>
-            </button>
-          </motion.div>
+          </main>
         )}
 
         {/* MISSION BRIEFING */}
         {view === 'mission' && activeMission && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 z-[150] bg-black flex flex-col p-6"
-          >
-            <div className="flex justify-between items-center mb-4 px-4">
-              <h2 className="text-3xl font-bold tracking-widest text-white uppercase">
-                {activeMission.name} ARCHIVES
-              </h2>
-              <button 
-                onClick={() => setView('map')} 
-                className="p-3 bg-white/5 rounded-full hover:bg-white/10 text-white transition-all"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
-              {/* Video Player */}
-              <div className="flex-[7] rounded-[3rem] overflow-hidden border border-white/10 bg-black shadow-2xl">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${activeMission.videoId}?rel=0&modestbranding=1`}
-                  title="Mission Briefing"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-
-              {/* Mission Intel Panel */}
-              <div className="flex-[3] bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 flex flex-col">
-                <div className="flex items-center gap-3 mb-8 text-cyan-400">
-                  <Info size={24} />
-                  <h4 className="font-bold uppercase tracking-widest text-sm">Mission Intel</h4>
-                </div>
-
-                <div className="flex-1 space-y-8 overflow-y-auto pr-2">
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-bold mb-3 tracking-widest">Objective</p>
-                    <p className="text-sm leading-relaxed text-gray-300 italic">
-                      "{activeMission.description}"
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-bold mb-4 tracking-widest">Sector Objectives</p>
-                    <div className="space-y-4">
-                      {activeMission.topics?.map((topic, idx) => (
-                        <div key={idx} className="flex items-center gap-3 text-white text-xs font-bold">
-                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-                          {topic}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-bold mb-2 tracking-widest">Project Mission</p>
-                    <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl">
-                      <p className="text-sm text-cyan-400">{activeMission.project}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-6 text-xs font-bold">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Clock className="w-4 h-4 text-cyan-400" />
-                      {activeMission.estimatedTime}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Trophy className="w-4 h-4 text-yellow-400" />
-                      {activeMission.badge}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setAssessmentStartTime(Date.now());
-                    setView('assessment');
-                  }}
-                  className="mt-8 bg-cyan-500 text-black py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg"
-                >
-                  ⚡ Initiate Assessment
-                </button>
-              </div>
-            </div>
-          </motion.div>
+          <MissionBriefing
+            mission={activeMission}
+            onBack={() => setView('map')}
+            onStart={() => setView('assessment')}
+          />
         )}
 
         {/* ASSESSMENT */}
@@ -750,6 +636,7 @@ const LearningGuide = () => {
             mission={activeMission}
             questions={activeMission.assessment}
             onComplete={handleCompleteAssessment}
+            onBack={() => setView('mission')}
           />
         )}
 
@@ -759,7 +646,7 @@ const LearningGuide = () => {
             score={lastScore}
             mistakes={lastMistakes}
             mission={activeMission}
-            onRetry={() => setView('mission')}
+            onRetry={() => setView('assessment')}
             onContinue={() => setView('map')}
           />
         )}
