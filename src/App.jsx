@@ -10,8 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import OnboardingPage from './pages/OnboardingPage';
 import Dashboard from './pages/Dashboard';
-import ResumeEntryPage from "./pages/ResumeEntryPage";
-import ResumeLabShell from "./pages/ResumeLabShell";
+import ResumeBuilder from './pages/ResumeBuilder';
 import CareerPersona from './pages/CareerPersona';
 import InterviewRoom from './pages/InterviewRoom';
 import InterviewHistory from './pages/InterviewHistory';
@@ -52,8 +51,7 @@ function AppLayout() {
         <Route path="/learning-guide" element={<LearningGuide />} />
 
         {/* Resume Builder */}
-        <Route path="/resume-builder" element={<ResumeEntryPage />} />
-        <Route path="/resume-builder/editor" element={<ResumeLabShell />} />
+        <Route path="/resume-builder" element={<ResumeBuilder />} />
 
         {/* Interview System */}
         <Route path="/interview-prep" element={<InterviewPrep />} />
