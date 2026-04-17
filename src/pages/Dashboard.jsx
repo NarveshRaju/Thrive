@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/DashboardNavbar";
@@ -8,273 +8,161 @@ import {
   Award,
   Zap,
   Sparkles,
-  CheckCircle2,
   ChevronRight,
-  Briefcase,
-  GraduationCap,
   Code,
   Loader2,
   FileText,
-  Linkedin,
   AlertCircle,
   Mic,
-  Calendar,
-  History,
   Clock,
   Rocket,
   Star,
-  Globe,
   Compass,
   TrendingUp,
+  BookOpen,
+  MapPin,
+  ArrowUpRight,
+  BarChart3,
+  GraduationCap,
+  Brain,
 } from "lucide-react";
 
-const API_URL = 'https://thrive-3r8o.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://thrive-3r8o.onrender.com/api';
 
-// Starfield Background Component
-const StarfieldBackground = () => {
-  const canvasRef = useRef(null);
-  
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    const stars = [];
-    const numStars = 200;
-    
-    for (let i = 0; i < numStars; i++) {
-      stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 1.5,
-        speed: Math.random() * 0.5 + 0.1,
-        opacity: Math.random() * 0.5 + 0.3,
-      });
-    }
-    
-    let animationId;
-    const animate = () => {
-      ctx.fillStyle = 'rgba(3, 3, 3, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      stars.forEach(star => {
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(229, 229, 229, ${star.opacity})`;
-        ctx.fill();
-        
-        star.y += star.speed;
-        if (star.y > canvas.height) {
-          star.y = 0;
-          star.x = Math.random() * canvas.width;
-        }
-      });
-      
-      animationId = requestAnimationFrame(animate);
-    };
-    
-    animate();
-    
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-  
+// Animated gradient background
+const GradientBackground = () => (
+  <div className="fixed inset-0 -z-10 overflow-hidden">
+    <div className="absolute inset-0 bg-[#030303]" />
+    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-600/5 rounded-full blur-[120px] animate-pulse" />
+    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px]" />
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-900/3 rounded-full blur-[150px]" />
+  </div>
+);
+
+// Stat Card with accent color
+const StatCard = ({ title, value, subtitle, icon: Icon, color, delay }) => {
+  const colorMap = {
+    amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', glow: 'shadow-amber-500/10' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', glow: 'shadow-emerald-500/10' },
+    violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/20', text: 'text-violet-400', glow: 'shadow-violet-500/10' },
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', glow: 'shadow-cyan-500/10' },
+  };
+  const c = colorMap[color] || colorMap.amber;
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: "spring", stiffness: 100 }}
+      className={`relative group ${c.bg} backdrop-blur-sm border ${c.border} rounded-2xl p-6 hover:shadow-lg ${c.glow} transition-all duration-300`}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-3 ${c.bg} rounded-xl`}>
+          <Icon className={`w-5 h-5 ${c.text}`} />
+        </div>
+        <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors" />
+      </div>
+      <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
+      <p className="text-xs text-gray-400 uppercase tracking-widest">{title}</p>
+      {subtitle && (
+        <p className="text-[10px] text-gray-500 mt-2">{subtitle}</p>
+      )}
+    </motion.div>
   );
 };
 
-// Orbital Ring Component
-const OrbitalRing = ({ score, size = 180 }) => {
-  const circumference = 2 * Math.PI * (size / 2 - 10);
+// Feature Card for main actions
+const FeatureCard = ({ title, description, icon: Icon, color, tag, onClick, delay }) => {
+  const colorMap = {
+    amber: { bg: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-500/20', text: 'text-amber-400', iconBg: 'bg-amber-500/20', tag: 'bg-amber-500/20 text-amber-400' },
+    violet: { bg: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-500/20', text: 'text-violet-400', iconBg: 'bg-violet-500/20', tag: 'bg-violet-500/20 text-violet-400' },
+    cyan: { bg: 'from-cyan-500/20 to-blue-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', iconBg: 'bg-cyan-500/20', tag: 'bg-cyan-500/20 text-cyan-400' },
+    emerald: { bg: 'from-emerald-500/20 to-green-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', iconBg: 'bg-emerald-500/20', tag: 'bg-emerald-500/20 text-emerald-400' },
+    rose: { bg: 'from-rose-500/20 to-pink-500/10', border: 'border-rose-500/20', text: 'text-rose-400', iconBg: 'bg-rose-500/20', tag: 'bg-rose-500/20 text-rose-400' },
+  };
+  const c = colorMap[color] || colorMap.amber;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: "spring", stiffness: 80 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      onClick={onClick}
+      className={`relative bg-gradient-to-br ${c.bg} backdrop-blur-sm border ${c.border} rounded-2xl p-6 cursor-pointer group overflow-hidden transition-all duration-300 hover:shadow-xl`}
+    >
+      {/* Hover glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/5 to-transparent" />
+
+      <div className="relative">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 ${c.iconBg} rounded-xl`}>
+            <Icon className={`w-6 h-6 ${c.text}`} />
+          </div>
+          {tag && (
+            <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${c.tag}`}>{tag}</span>
+          )}
+        </div>
+
+        <h4 className="text-white font-bold text-lg mb-2">{title}</h4>
+        <p className="text-gray-400 text-sm leading-relaxed mb-4">{description}</p>
+
+        <div className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest group-hover:gap-2 transition-all">
+          <span className={c.text}>Explore</span>
+          <ChevronRight className={`w-3.5 h-3.5 ${c.text}`} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Progress Ring
+const ProgressRing = ({ score, size = 140 }) => {
+  const radius = (size / 2) - 8;
+  const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
-  
+
+  const getColor = (s) => {
+    if (s >= 75) return { stroke: '#22c55e', text: 'text-emerald-400', label: 'Excellent' };
+    if (s >= 50) return { stroke: '#f59e0b', text: 'text-amber-400', label: 'Good' };
+    return { stroke: '#f97316', text: 'text-orange-400', label: 'Building' };
+  };
+  const c = getColor(score);
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90" width={size} height={size}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={size / 2 - 10}
-          stroke="rgba(229, 229, 229, 0.1)"
-          strokeWidth="3"
-          fill="none"
-        />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.05)" strokeWidth="6" fill="none" />
         <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={size / 2 - 10}
-          stroke="rgba(229, 229, 229, 0.8)"
-          strokeWidth="3"
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke={c.stroke}
+          strokeWidth="6"
           fill="none"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
           strokeLinecap="round"
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: circumference - progress }}
           transition={{ duration: 2, ease: "easeOut" }}
-          style={{
-            filter: "drop-shadow(0 0 8px rgba(229, 229, 229, 0.6))"
-          }}
+          style={{ filter: `drop-shadow(0 0 6px ${c.stroke}40)` }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.5, type: "spring" }}
-            className="text-4xl font-bold text-white"
-          >
-            {score}
-          </motion.div>
-          <div className="text-xs text-stone-400 tracking-widest mt-1">READINESS</div>
-        </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5, type: "spring" }}
+          className="text-3xl font-bold text-white"
+        >
+          {score}
+        </motion.span>
+        <span className={`text-[10px] font-bold tracking-widest ${c.text}`}>{c.label}</span>
       </div>
-      {/* Orbiting satellite */}
-      <motion.div
-        className="absolute w-3 h-3 bg-stone-200 rounded-full shadow-[0_0_12px_rgba(229,229,229,0.8)]"
-        style={{
-          left: '50%',
-          top: '50%',
-        }}
-        animate={{
-          x: [0, (size / 2 - 10) * Math.cos(0), (size / 2 - 10) * Math.cos(Math.PI / 2), (size / 2 - 10) * Math.cos(Math.PI), (size / 2 - 10) * Math.cos(3 * Math.PI / 2), 0],
-          y: [-(size / 2 - 10), (size / 2 - 10) * Math.sin(0), (size / 2 - 10) * Math.sin(Math.PI / 2), (size / 2 - 10) * Math.sin(Math.PI), (size / 2 - 10) * Math.sin(3 * Math.PI / 2), -(size / 2 - 10)],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
     </div>
   );
 };
 
-// Planet Card Component
-const PlanetCard = ({ title, value, subtitle, icon: Icon, delay, status = "complete" }) => {
-  const planetColors = {
-    complete: "rgba(229, 229, 229, 0.15)",
-    active: "rgba(245, 245, 220, 0.15)",
-    locked: "rgba(120, 120, 120, 0.1)",
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 50 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ delay, type: "spring", stiffness: 100 }}
-      whileHover={{ scale: 1.05, y: -5 }}
-      className="relative group cursor-pointer"
-    >
-      {/* Glow effect */}
-      <div 
-        className="absolute inset-0 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity"
-        style={{ background: planetColors[status] }}
-      />
-      
-      {/* Planet body */}
-      <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-full aspect-square p-6 flex flex-col items-center justify-center text-center">
-        <div className="mb-3 p-3 bg-white/5 rounded-full">
-          <Icon className="w-6 h-6 text-stone-200" />
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-1">{value}</h3>
-        <p className="text-xs text-stone-400 uppercase tracking-widest">{title}</p>
-        {subtitle && (
-          <p className="text-[10px] text-stone-500 mt-2">{subtitle}</p>
-        )}
-      </div>
-      
-      {/* Orbital rings */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
-        <ellipse
-          cx="50%"
-          cy="50%"
-          rx="48%"
-          ry="20%"
-          fill="none"
-          stroke="rgba(229, 229, 229, 0.3)"
-          strokeWidth="1"
-        />
-      </svg>
-    </motion.div>
-  );
-};
-
-// Mission Card Component
-const MissionCard = ({ title, description, progress, icon: Icon, onClick }) => {
-  return (
-    <motion.div
-      whileHover={{ x: 5 }}
-      onClick={onClick}
-      className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all group relative overflow-hidden"
-    >
-      {/* Animated background gradient */}
-      <motion.div
-        className="absolute inset-0 opacity-0 group-hover:opacity-10"
-        animate={{
-          background: [
-            'radial-gradient(circle at 0% 0%, rgba(229,229,229,0.1) 0%, transparent 50%)',
-            'radial-gradient(circle at 100% 100%, rgba(229,229,229,0.1) 0%, transparent 50%)',
-            'radial-gradient(circle at 0% 0%, rgba(229,229,229,0.1) 0%, transparent 50%)',
-          ]
-        }}
-        transition={{ duration: 3, repeat: Infinity }}
-      />
-      
-      <div className="relative flex gap-4">
-        <div className="p-3 bg-white/5 rounded-xl h-fit group-hover:bg-white/10 transition-colors">
-          <Icon className="w-5 h-5 text-stone-200" />
-        </div>
-        <div className="flex-1">
-          <h4 className="text-white font-bold text-sm mb-2">{title}</h4>
-          <p className="text-stone-400 text-xs leading-relaxed mb-3">{description}</p>
-          
-          {progress !== undefined && (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <motion.div
-                  className="bg-stone-200 h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  style={{
-                    boxShadow: '0 0 8px rgba(229, 229, 229, 0.5)'
-                  }}
-                />
-              </div>
-              <span className="text-xs text-stone-400">{progress}%</span>
-            </div>
-          )}
-          
-          <div className="mt-3 flex items-center gap-1 text-[10px] font-bold text-stone-300 uppercase tracking-widest group-hover:gap-2 transition-all">
-            Launch Mission <ChevronRight className="w-3 h-3" />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 // Main Dashboard
-const SpaceDashboard = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -289,7 +177,7 @@ const SpaceDashboard = () => {
 
   const checkAuthAndFetchData = async () => {
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       navigate('/login');
       return;
@@ -307,10 +195,8 @@ const SpaceDashboard = () => {
       }
 
       const verifyData = await verifyResponse.json();
-      console.log('✅ User verified:', verifyData.user);
 
       if (!verifyData.user.onboardingComplete) {
-        console.log('⚠️ Onboarding not complete, redirecting...');
         navigate('/onboarding');
         return;
       }
@@ -318,7 +204,7 @@ const SpaceDashboard = () => {
       await fetchUserProfile(token);
 
     } catch (error) {
-      console.error('❌ Auth check error:', error);
+      console.error('Auth check error:', error);
       setError('Failed to load user data');
       setLoading(false);
     }
@@ -329,7 +215,7 @@ const SpaceDashboard = () => {
       const profileResponse = await fetch(`${API_URL}/profile/complete-profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (!profileResponse.ok) throw new Error('Failed to fetch profile');
 
       const profileData = await profileResponse.json();
@@ -343,7 +229,7 @@ const SpaceDashboard = () => {
       }
 
     } catch (error) {
-      console.error('❌ Error fetching profile:', error);
+      console.error('Error fetching profile:', error);
       setError(error.message);
       setLoading(false);
     }
@@ -373,7 +259,7 @@ const SpaceDashboard = () => {
       setLoading(false);
 
     } catch (error) {
-      console.error('❌ Error generating insights:', error);
+      console.error('Error generating insights:', error);
       setGeneratingInsights(false);
       setLoading(false);
     }
@@ -382,14 +268,14 @@ const SpaceDashboard = () => {
   // Calculate metrics
   const calculateReadinessScore = () => {
     if (aiInsights?.jobReadinessScore) return aiInsights.jobReadinessScore;
-    
+
     let score = 0;
     if (userData?.dataAvailability?.hasOnboarding) score += 30;
     if (userData?.dataAvailability?.hasResume) score += 25;
     if (userData?.dataAvailability?.hasLinkedIn) score += 25;
     if (userData?.linkedinData?.positions?.length > 0) score += 10;
     if (userData?.linkedinData?.skills?.length >= 5) score += 10;
-    
+
     return score;
   };
 
@@ -409,66 +295,64 @@ const SpaceDashboard = () => {
   };
 
   const getUserName = () => {
-    if (userData?.linkedinData?.firstName) {
-      return userData.linkedinData.firstName;
-    }
-    if (userData?.resumeData?.name) {
-      return userData.resumeData.name.split(' ')[0];
-    }
-    return userData?.basic?.username || 'Commander';
+    if (userData?.linkedinData?.firstName) return userData.linkedinData.firstName;
+    if (userData?.resumeData?.name) return userData.resumeData.name.split(' ')[0];
+    return userData?.basic?.username || 'Explorer';
   };
 
   const getCareerStatus = () => {
     const status = userData?.careerProfile?.status;
-    switch(status) {
-      case 'student': return 'CADET';
-      case 'graduate': return 'EXPLORER';
-      case 'career_switcher': return 'NAVIGATOR';
-      default: return 'PIONEER';
+    switch (status) {
+      case 'student': return 'Student';
+      case 'graduate': return 'Graduate';
+      case 'career_switcher': return 'Switcher';
+      default: return 'Pioneer';
     }
   };
 
   const getProfileCompleteness = () => {
     let completed = 0;
-    let total = 4;
-    
+    const total = 4;
     if (userData?.dataAvailability?.hasOnboarding) completed++;
     if (userData?.dataAvailability?.hasResume) completed++;
     if (userData?.dataAvailability?.hasLinkedIn) completed++;
     if (userData?.dataAvailability?.hasInsights) completed++;
-    
     return Math.round((completed / total) * 100);
   };
 
+  // Loading state
   if (loading || generatingInsights) {
     return (
-      <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center relative">
-        <StarfieldBackground />
+      <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center">
+        <GradientBackground />
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="mb-6"
         >
-          <Rocket className="w-16 h-16 text-stone-200 mb-4" />
+          <Loader2 className="w-12 h-12 text-amber-500" />
         </motion.div>
-        <p className="text-stone-400 tracking-widest text-sm">
-          {generatingInsights ? 'ANALYZING MISSION DATA...' : 'INITIALIZING MISSION CONTROL...'}
+        <p className="text-white text-lg font-semibold mb-2">
+          {generatingInsights ? 'Analyzing your profile...' : 'Loading dashboard...'}
         </p>
+        <p className="text-gray-500 text-sm">Powered by AI</p>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center relative">
-        <StarfieldBackground />
-        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-        <p className="text-white text-xl mb-2">SYSTEM ERROR</p>
-        <p className="text-stone-400 mb-6">{error}</p>
+      <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center">
+        <GradientBackground />
+        <AlertCircle className="w-14 h-14 text-red-500 mb-4" />
+        <p className="text-white text-xl font-bold mb-2">Something went wrong</p>
+        <p className="text-gray-400 mb-6">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="bg-stone-200 hover:bg-stone-300 text-black px-6 py-3 rounded-xl transition-colors font-bold"
+          className="bg-amber-500 hover:bg-amber-600 text-black px-8 py-3 rounded-xl transition-colors font-bold"
         >
-          RETRY MISSION
+          Try Again
         </button>
       </div>
     );
@@ -477,288 +361,313 @@ const SpaceDashboard = () => {
   const readinessScore = calculateReadinessScore();
   const skillCount = calculateSkillCount();
   const activeGoals = getActiveGoalsCount();
-  
-  return (
-    <div className="min-h-screen bg-[#030303] text-stone-200 relative">
-      <StarfieldBackground />
-      <Navbar />
-      
-      <main className="relative z-10 pt-28 pb-12 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
-        {/* Header Mission Brief */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl font-bold text-white mb-3 tracking-tight">
-            Welcome back, {getUserName()}
-          </h2>
-          <p className="text-stone-400 text-sm tracking-wide">
-            {userData?.careerProfile?.passion 
-              ? `Mission Focus: ${userData.careerProfile.passion.substring(0, 80)}${userData.careerProfile.passion.length > 80 ? '...' : ''}`
-              : 'Your career trajectory is on course. Continue your missions below.'}
-          </p>
-        </motion.div>
-        
-        {/* Central Command: Readiness Score */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex justify-center mb-16"
-        >
-          <div className="relative">
-            <OrbitalRing score={readinessScore} size={200} />
-            <div className="absolute -inset-8 bg-gradient-radial from-white/5 to-transparent rounded-full blur-2xl -z-10" />
-          </div>
-        </motion.div>
-        
-        {/* Planet Grid - Core Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-          <PlanetCard
-            title="Skills"
-            value={skillCount}
-            subtitle="Mastered"
-            icon={Award}
-            delay={0.1}
-            status="complete"
-          />
-          <PlanetCard
-            title="Missions"
-            value={activeGoals}
-            subtitle="Active"
-            icon={Target}
-            delay={0.2}
-            status="active"
-          />
-          <PlanetCard
-            title="Interviews"
-            value={userData?.interviewStats?.totalInterviews || 0}
-            subtitle="Completed"
-            icon={Mic}
-            delay={0.3}
-            status="complete"
-          />
-          <PlanetCard
-            title="Status"
-            value={getCareerStatus()}
-            subtitle="Rank"
-            icon={Compass}
-            delay={0.4}
-            status="complete"
-          />
-        </div>
-        
-        {/* Mission Control Center */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Active Missions */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-bold text-lg tracking-wide flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                ACTIVE MISSIONS
-              </h3>
-              <div className="text-xs text-stone-500 tracking-widest">{activeGoals} ONGOING</div>
-            </div>
-            
-            <MissionCard
-              title="AI Mock Interview Training"
-              description="Practice with our AI interviewer and receive instant tactical feedback on your performance"
-              progress={getProfileCompleteness()}
-              icon={Mic}
-              onClick={() => setShowInterviewModal(true)}
-            />
-            
-            <MissionCard
-              title="Career Persona Calibration"
-              description="Define your professional identity and align your trajectory with optimal career pathways"
-              progress={userData?.dataAvailability?.hasInsights ? 100 : 40}
-              icon={Sparkles}
-              onClick={() => navigate('/career-persona')}
-            />
-            
-            <MissionCard
-              title="Resume Enhancement Protocol"
-              description="Upload and optimize your career documentation for maximum impact"
-              progress={userData?.dataAvailability?.hasResume ? 100 : 0}
-              icon={FileText}
-              onClick={() => navigate('/resume-builder')}
-            />
+  const profileCompleteness = getProfileCompleteness();
 
-            {getProfileCompleteness() < 100 && (
-              <MissionCard
-                title="Complete Profile Integration"
-                description="Connect all data sources to unlock full AI-powered career guidance capabilities"
-                progress={getProfileCompleteness()}
-                icon={AlertCircle}
-                onClick={() => navigate('/onboarding')}
-              />
-            )}
-          </div>
-          
-          {/* Mission Log */}
-          <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-bold flex items-center gap-2">
-                <History className="w-5 h-5" />
-                MISSION LOG
-              </h3>
-              <button
-                onClick={() => navigate('/interview-history')}
-                className="text-xs text-stone-400 hover:text-stone-200 transition-colors"
-              >
-                VIEW ALL →
-              </button>
-            </div>
-            
-            <div className="space-y-3">
-              {userData?.interviewHistory?.length > 0 ? (
-                userData.interviewHistory.slice(0, 3).map((log, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer border border-white/5"
-                    onClick={() => navigate('/interview-history')}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium text-stone-300 capitalize">
-                        {log.interviewType} Protocol
-                      </span>
-                      <span className={`text-xs font-bold px-2 py-1 rounded ${
-                        log.overallScore >= 75 ? 'bg-green-500/20 text-green-400' :
-                        log.overallScore >= 50 ? 'bg-amber-500/20 text-amber-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        {log.overallScore}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-stone-500">
-                      <Clock className="w-3 h-3" />
-                      {Math.round((log.duration || 0) / 60)}m
-                      <span>•</span>
-                      <Calendar className="w-3 h-3" />
-                      {new Date(log.completedAt).toLocaleDateString()}
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Mic className="w-10 h-10 text-stone-600 mx-auto mb-3" />
-                  <p className="text-sm text-stone-500 mb-3">No missions logged</p>
-                  <button
-                    onClick={() => setShowInterviewModal(true)}
-                    className="text-xs text-stone-300 hover:text-white font-bold"
-                  >
-                    START FIRST MISSION →
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* System Status */}
+  return (
+    <div className="min-h-screen bg-[#030303] text-white">
+      <GradientBackground />
+      <Navbar />
+
+      <main className="relative z-10 pt-24 pb-16 px-4 md:px-8 max-w-7xl mx-auto">
+        {/* Welcome Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-8"
+          className="mb-10"
         >
-          <h3 className="text-white font-bold mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            SYSTEM STATUS
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-xs text-stone-400 tracking-widest">ONBOARDING</span>
-                <span className="text-xs font-bold text-stone-300">
-                  {userData?.dataAvailability?.hasOnboarding ? 'COMPLETE' : 'PENDING'}
-                </span>
-              </div>
-              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <motion.div
-                  className="bg-stone-200 h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: userData?.dataAvailability?.hasOnboarding ? '100%' : '0%' }}
-                  style={{ boxShadow: '0 0 8px rgba(229, 229, 229, 0.5)' }}
-                />
-              </div>
+              <p className="text-sm text-amber-400 font-semibold mb-1 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Welcome back
+              </p>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                {getUserName()}
+                <span className="text-amber-500">.</span>
+              </h1>
+              <p className="text-gray-400 mt-2 max-w-lg">
+                {userData?.careerProfile?.passion
+                  ? userData.careerProfile.passion.substring(0, 100) + (userData.careerProfile.passion.length > 100 ? '...' : '')
+                  : 'Your personalized career dashboard. Explore, learn, and grow.'}
+              </p>
             </div>
-            
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-xs text-stone-400 tracking-widest">RESUME</span>
-                <span className="text-xs font-bold text-stone-300">
-                  {userData?.dataAvailability?.hasResume ? 'COMPLETE' : 'PENDING'}
-                </span>
+
+            {/* Quick Stats Badge */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-amber-400" />
+                <span className="text-sm font-semibold">{getCareerStatus()}</span>
               </div>
-              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <motion.div
-                  className="bg-stone-200 h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: userData?.dataAvailability?.hasResume ? '100%' : '0%' }}
-                  style={{ boxShadow: '0 0 8px rgba(229, 229, 229, 0.5)' }}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-xs text-stone-400 tracking-widest">LINKEDIN</span>
-                <span className="text-xs font-bold text-stone-300">
-                  {userData?.dataAvailability?.hasLinkedIn ? 'COMPLETE' : 'PENDING'}
-                </span>
-              </div>
-              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <motion.div
-                  className="bg-stone-200 h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: userData?.dataAvailability?.hasLinkedIn ? '100%' : '0%' }}
-                  style={{ boxShadow: '0 0 8px rgba(229, 229, 229, 0.5)' }}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-xs text-stone-400 tracking-widest">AI INSIGHTS</span>
-                <span className="text-xs font-bold text-stone-300">
-                  {userData?.dataAvailability?.hasInsights ? 'COMPLETE' : 'PENDING'}
-                </span>
-              </div>
-              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <motion.div
-                  className="bg-stone-200 h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: userData?.dataAvailability?.hasInsights ? '100%' : '0%' }}
-                  style={{ boxShadow: '0 0 8px rgba(229, 229, 229, 0.5)' }}
-                />
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-semibold">{profileCompleteness}% Complete</span>
               </div>
             </div>
           </div>
         </motion.div>
-        
-        {/* Footer Status Bar */}
+
+        {/* Stats Grid + Readiness Ring */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-10">
+          {/* Readiness Score */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center"
+          >
+            <ProgressRing score={readinessScore} />
+            <p className="text-xs text-gray-400 mt-3 tracking-widest uppercase">Job Readiness</p>
+          </motion.div>
+
+          {/* Stat Cards */}
+          <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard title="Skills" value={skillCount} subtitle="Identified" icon={Award} color="amber" delay={0.1} />
+            <StatCard title="Goals" value={activeGoals} subtitle="Active" icon={Target} color="violet" delay={0.15} />
+            <StatCard title="Interviews" value={userData?.interviewStats?.totalInterviews || 0} subtitle="Completed" icon={Mic} color="cyan" delay={0.2} />
+            <StatCard title="Avg Score" value={`${userData?.interviewStats?.averageScore || 0}%`} subtitle="Performance" icon={TrendingUp} color="emerald" delay={0.25} />
+          </div>
+        </div>
+
+        {/* Main Feature Cards */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="text-center text-xs text-stone-600 tracking-widest pt-8"
+          transition={{ delay: 0.3 }}
+          className="mb-10"
         >
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-stone-400 rounded-full animate-pulse" />
-            ALL SYSTEMS OPERATIONAL
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-amber-400" />
+            Your AI-Powered Toolkit
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <FeatureCard
+              title="AI Career Path Explorer"
+              description="Discover your personalized career paths based on your skills, experience, and passions."
+              icon={Compass}
+              color="amber"
+              tag="AI Powered"
+              onClick={() => navigate('/career-path')}
+              delay={0.35}
+            />
+            <FeatureCard
+              title="AI Mock Interview"
+              description="Practice with our voice-based AI interviewer and get real-time performance analysis."
+              icon={Mic}
+              color="violet"
+              tag="Voice AI"
+              onClick={() => setShowInterviewModal(true)}
+              delay={0.4}
+            />
+            <FeatureCard
+              title="AI Learning Guide"
+              description="Follow a gamified learning journey with missions, assessments, and badges."
+              icon={BookOpen}
+              color="cyan"
+              tag="Gamified"
+              onClick={() => navigate('/learning-guide')}
+              delay={0.45}
+            />
+            <FeatureCard
+              title="AI Resume Builder"
+              description="Auto-generate and enhance your resume with AI. Get ATS optimization scores."
+              icon={FileText}
+              color="emerald"
+              tag="ATS Ready"
+              onClick={() => navigate('/resume-builder')}
+              delay={0.5}
+            />
+            <FeatureCard
+              title="Career Persona"
+              description="Calibrate your professional identity and align your trajectory with goals."
+              icon={Brain}
+              color="rose"
+              onClick={() => navigate('/career-persona')}
+              delay={0.55}
+            />
+            <FeatureCard
+              title="Interview History"
+              description="Review past interview sessions, scores, and AI-generated improvement tips."
+              icon={Clock}
+              color="amber"
+              onClick={() => navigate('/interview-history')}
+              delay={0.6}
+            />
           </div>
-          <p>CAREER NAVIGATION SYSTEM v2.1.0 • PROFILE: {getProfileCompleteness()}% COMPLETE</p>
         </motion.div>
+
+        {/* Bottom Section: AI Insights + Profile Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* AI Insights */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="lg:col-span-2 bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/10 rounded-2xl p-6"
+          >
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              AI Career Insights
+            </h3>
+
+            {aiInsights ? (
+              <div className="space-y-4">
+                {aiInsights.topCareerPaths && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Recommended Careers</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(Array.isArray(aiInsights.topCareerPaths)
+                        ? aiInsights.topCareerPaths
+                        : [aiInsights.topCareerPaths]
+                      ).slice(0, 5).map((path, i) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-300 cursor-pointer hover:bg-amber-500/20 transition-colors"
+                          onClick={() => navigate('/career-path')}
+                        >
+                          {typeof path === 'string' ? path : path.title || path.name || 'Career Path'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {aiInsights.strengthAreas && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Your Strengths</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(Array.isArray(aiInsights.strengthAreas)
+                        ? aiInsights.strengthAreas
+                        : [aiInsights.strengthAreas]
+                      ).slice(0, 6).map((s, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-sm text-emerald-300">
+                          {typeof s === 'string' ? s : s.name || s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {aiInsights.improvementAreas && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Areas to Develop</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(Array.isArray(aiInsights.improvementAreas)
+                        ? aiInsights.improvementAreas
+                        : [aiInsights.improvementAreas]
+                      ).slice(0, 6).map((s, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg text-sm text-violet-300">
+                          {typeof s === 'string' ? s : s.name || s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => navigate('/career-path')}
+                  className="mt-2 text-sm text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
+                >
+                  Explore full career paths <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Brain className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm mb-4">AI insights will appear after you complete more activities.</p>
+                <button
+                  onClick={() => navigate('/career-path')}
+                  className="text-amber-400 hover:text-amber-300 text-sm font-bold"
+                >
+                  Generate Career Paths →
+                </button>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Profile Completion */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="bg-white/[0.03] border border-white/10 rounded-2xl p-6"
+          >
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-amber-400" />
+              Profile Status
+            </h3>
+
+            <div className="space-y-4">
+              {[
+                { label: 'Onboarding', done: userData?.dataAvailability?.hasOnboarding, icon: Star },
+                { label: 'Resume', done: userData?.dataAvailability?.hasResume, icon: FileText },
+                { label: 'LinkedIn', done: userData?.dataAvailability?.hasLinkedIn, icon: Code },
+                { label: 'AI Insights', done: userData?.dataAvailability?.hasInsights, icon: Sparkles },
+              ].map((item, i) => {
+                const CheckIcon = item.icon;
+                return (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-lg ${item.done ? 'bg-emerald-500/20' : 'bg-white/5'}`}>
+                        <CheckIcon className={`w-3.5 h-3.5 ${item.done ? 'text-emerald-400' : 'text-gray-600'}`} />
+                      </div>
+                      <span className={`text-sm font-medium ${item.done ? 'text-white' : 'text-gray-500'}`}>
+                        {item.label}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.done
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-white/5 text-gray-500'
+                      }`}>
+                      {item.done ? '✓ Done' : 'Pending'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {profileCompleteness < 100 && (
+              <button
+                onClick={() => navigate('/onboarding')}
+                className="mt-6 w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-amber-400 font-bold text-sm transition-colors"
+              >
+                Complete Your Profile →
+              </button>
+            )}
+
+            {/* Recent activity */}
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Recent Sessions</p>
+              {userData?.interviewHistory?.length > 0 ? (
+                <div className="space-y-2">
+                  {userData.interviewHistory.slice(0, 2).map((log, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between bg-white/5 rounded-lg p-3 cursor-pointer hover:bg-white/10 transition-colors"
+                      onClick={() => navigate('/interview-history')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Mic className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-xs text-gray-300 capitalize">{log.interviewType}</span>
+                      </div>
+                      <span className={`text-xs font-bold ${log.overallScore >= 75 ? 'text-emerald-400' :
+                        log.overallScore >= 50 ? 'text-amber-400' : 'text-red-400'
+                        }`}>
+                        {log.overallScore}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">No sessions yet</p>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </main>
 
       {/* Interview Modal */}
       {showInterviewModal && (
-        <InterviewModal 
+        <InterviewModal
           onClose={() => setShowInterviewModal(false)}
           userData={userData}
         />
@@ -767,4 +676,4 @@ const SpaceDashboard = () => {
   );
 };
 
-export default SpaceDashboard;
+export default Dashboard;
