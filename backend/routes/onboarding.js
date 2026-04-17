@@ -75,7 +75,7 @@ Return ONLY a JSON array with this exact structure:
     let questions;
     if (responseText.includes('```json')) {
       const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-      questions = JSON.parse(jsonMatch ? jsonMatch : responseText);[1]
+      questions = JSON.parse(jsonMatch ? jsonMatch[1] : responseText);
     } else if (responseText.includes('```')) {
       const jsonMatch = responseText.match(/```\n([\s\S]*?)\n```/);
       questions = JSON.parse(jsonMatch ? jsonMatch[1] : responseText);
@@ -127,7 +127,7 @@ Respond with JSON:
     let response;
     if (responseText.includes('```json')) {
       const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-      response = JSON.parse(jsonMatch ? jsonMatch : responseText);[1]
+      response = JSON.parse(jsonMatch ? jsonMatch[1] : responseText);
     } else if (responseText.includes('```')) {
       const jsonMatch = responseText.match(/```\n([\s\S]*?)\n```/);
       response = JSON.parse(jsonMatch ? jsonMatch[1] : responseText);

@@ -142,10 +142,18 @@ const OnboardingPage = () => {
       });
 
       const data = await response.json();
-      setQuestions(data.questions);
+      if (data.questions && Array.isArray(data.questions)) {
+        setQuestions(data.questions);
+      } else {
+        console.error('Invalid questions response:', data);
+        alert('Failed to generate questions. Please try again.');
+        setStep(2);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error generating questions:', error);
+      alert('Failed to generate questions. Please try again.');
+      setStep(2);
       setLoading(false);
     }
   };
