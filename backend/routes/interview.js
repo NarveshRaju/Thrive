@@ -159,6 +159,84 @@ router.post('/start/:roomId', authenticateUser, async (req, res) => {
   }
 });
 
+// AI Interview Chat - Personalized questions for any field
+router.post('/chat/:roomId', authenticateUser, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { message, history, interviewType, difficulty, targetRole, industry, focusAreas, candidateName, questionNumber, maxQuestions } = req.body;
+
+    const isStart = message === '__START_INTERVIEW__';
+
+    const roleDesc = targetRole || 'professional';
+    const industryDesc = industry || 'general';
+    const typeDesc = {
+      'role-specific': `role-specific interview for a ${roleDesc} position in ${industryDesc}`,
+      'behavioral': 'behavioral interview focusing on leadership, teamwork, conflict resolution, and situational questions',
+      'technical': `domain-specific technical interview for ${roleDesc} in ${industryDesc}`,
+      'case-study': `case study and problem solving interview for ${roleDesc} in ${industryDesc}`,
+      'hr-cultural': 'HR and culture fit interview covering motivation, salary expectations, and career goals',
+    }[interviewType] || `general interview for ${roleDesc}`;
+
+    const difficultyDesc = {
+      'easy': 'fresher/entry-level (0-1 years experience)',
+      'medium': 'mid-level (2-5 years experience)', 
+      'hard': 'senior-level (5+ years experience)'
+    }[difficulty] || 'mid-level';
+
+    const systemPrompt = `You are an experienced, professional interviewer conducting a ${typeDesc}.
+
+CANDIDATE: ${candidateName || 'the candidate'}
+DIFFICULTY: ${difficultyDesc}
+${focusAreas ? `FOCUS AREAS: ${focusAreas}` : ''}
+${industry ? `INDUSTRY: ${industry}` : ''}
+
+RULES:
+- Ask ONE question at a time
+- Keep questions concise and clear
+- Adapt difficulty based on the candidate's responses
+- Be professional but warm and encouraging
+- After each answer, briefly acknowledge it (1 sentence) before asking the next question
+- Questions should be relevant to the role and industry, NOT generic
+- Do NOT ask coding questions unless the role is specifically a developer/engineer role
+- Mix different question types: situational, competency-based, knowledge-based
+- ${isStart ? 'Start with a warm greeting and your first question.' : ''}
+- ${(questionNumber || 0) >= (maxQuestions || 8) ? 'This is the last question. After this, wrap up the interview with a brief positive closing remark.' : ''}
+- Keep your response under 150 words`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+    ];
+
+    if (isStart) {
+      messages.push({ role: 'user', content: `Please start the interview with a brief greeting and your first question for a ${roleDesc} position.` });
+    } else {
+      // Add conversation history
+      if (history && history.length > 0) {
+        messages.push(...history);
+      }
+    }
+
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      messages,
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.8,
+      max_tokens: 500
+    });
+
+    const aiResponse = completion.choices[0].message.content.trim();
+
+    res.json({
+      success: true,
+      response: aiResponse
+    });
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ success: false, message: 'AI chat failed', error: error.message });
+  }
+});
+
 // Update transcript in real-time
 router.post('/update-transcript/:roomId', authenticateUser, async (req, res) => {
   try {
