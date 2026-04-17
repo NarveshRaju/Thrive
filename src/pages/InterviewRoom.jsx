@@ -22,19 +22,45 @@ const getSpeechRecognition = () => {
   return recognition;
 };
 
+// Pick the most natural-sounding voice available
+const pickBestVoice = () => {
+  const voices = window.speechSynthesis?.getVoices() || [];
+  // Priority: Google UK Female > Google US Female > Microsoft natural > any female > first
+  const priorities = [
+    v => v.name.includes('Google UK English Female'),
+    v => v.name.includes('Google US English'),
+    v => v.name === 'Samantha',
+    v => v.name.includes('Microsoft') && (v.name.includes('Zira') || v.name.includes('Aria') || v.name.includes('Jenny')),
+    v => v.name.includes('Natural') || v.name.includes('Premium'),
+    v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Karen'),
+    v => v.lang.startsWith('en'),
+  ];
+  for (const test of priorities) {
+    const found = voices.find(test);
+    if (found) return found;
+  }
+  return voices[0] || null;
+};
+
 const speak = (text, onEnd) => {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
-  utterance.volume = 1.0;
-  // Try to pick a natural voice
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha'));
-  if (preferred) utterance.voice = preferred;
-  if (onEnd) utterance.onend = onEnd;
-  window.speechSynthesis.speak(utterance);
+  // Split into sentences for more natural pauses
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+  let index = 0;
+  const speakNext = () => {
+    if (index >= sentences.length) { if (onEnd) onEnd(); return; }
+    const utterance = new SpeechSynthesisUtterance(sentences[index].trim());
+    utterance.rate = 0.95;
+    utterance.pitch = 1.05;
+    utterance.volume = 1.0;
+    const voice = pickBestVoice();
+    if (voice) utterance.voice = voice;
+    utterance.onend = () => { index++; setTimeout(speakNext, 150); }; // natural pause between sentences
+    utterance.onerror = () => { index++; speakNext(); };
+    window.speechSynthesis.speak(utterance);
+  };
+  speakNext();
 };
 
 // ===== SIMPLE CODE EDITOR =====
@@ -111,6 +137,8 @@ function InterviewRoom() {
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false); // true = hands-free conversation
+  const autoSendTimerRef = useRef(null);
 
   // Code
   const [showCode, setShowCode] = useState(false);
@@ -129,6 +157,7 @@ function InterviewRoom() {
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
+      if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -158,53 +187,93 @@ function InterviewRoom() {
     }
   };
 
-  // Speak AI response
+  // Speak AI response — after speaking, auto-start mic in voice mode
   const speakResponse = (text) => {
     if (!voiceEnabled) return;
     setIsSpeaking(true);
-    speak(text, () => setIsSpeaking(false));
+    speak(text, () => {
+      setIsSpeaking(false);
+      // Auto-start listening after AI finishes speaking in voice mode
+      if (voiceMode) {
+        setTimeout(() => startListening(), 400);
+      }
+    });
   };
 
-  // Toggle listening
-  const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
+  // Start listening (called manually or auto after AI speaks)
+  const startListening = () => {
+    if (isListening || sending) return;
 
     const recognition = getSpeechRecognition();
     if (!recognition) {
-      alert('Speech recognition not supported in this browser. Please use Chrome.');
+      alert('Speech recognition not supported. Please use Chrome.');
       return;
     }
 
     recognitionRef.current = recognition;
-    let finalTranscript = input;
+    let finalTranscript = '';
+    let lastResultTime = Date.now();
 
     recognition.onresult = (event) => {
       let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      finalTranscript = '';
+      for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript + ' ';
         } else {
           interim += event.results[i][0].transcript;
         }
       }
-      setInput(finalTranscript + interim);
+      const currentText = (finalTranscript + interim).trim();
+      setInput(currentText);
+      lastResultTime = Date.now();
+
+      // Auto-send: reset timer on every result, send after 2s silence
+      if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
+      if (currentText.length > 5) {
+        autoSendTimerRef.current = setTimeout(() => {
+          // Check if still no new input after 2s
+          if (Date.now() - lastResultTime >= 1900) {
+            recognition.stop();
+          }
+        }, 2000);
+      }
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech error:', event.error);
+      if (event.error !== 'no-speech') console.error('Speech error:', event.error);
       setIsListening(false);
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      // Auto-send the accumulated text
+      setInput(prev => {
+        if (prev.trim().length > 5) {
+          // Use a micro-delay to let state settle, then trigger send
+          setTimeout(() => {
+            const sendBtn = document.getElementById('interview-send-btn');
+            if (sendBtn) sendBtn.click();
+          }, 100);
+        }
+        return prev;
+      });
     };
 
     recognition.start();
     setIsListening(true);
+  };
+
+  // Toggle listening on/off
+  const toggleListening = () => {
+    if (isListening) {
+      if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      setVoiceMode(true);
+      startListening();
+    }
   };
 
   // Start interview
@@ -638,7 +707,7 @@ function InterviewRoom() {
                       }`}
                     />
 
-                    <button onClick={sendMessage} disabled={!input.trim() || sending}
+                    <button id="interview-send-btn" onClick={sendMessage} disabled={!input.trim() || sending}
                       className="p-3 bg-amber-500 hover:bg-amber-600 rounded-xl transition-all disabled:opacity-30 flex-shrink-0">
                       <Send className="w-4 h-4 text-black" />
                     </button>
