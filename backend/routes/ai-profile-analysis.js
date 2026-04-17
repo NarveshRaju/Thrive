@@ -163,7 +163,7 @@ Return ONLY this JSON structure:
   }
 });
 
-// ===== GENERATE CAREER PATHS (using Gemini 2.0 Flash) =====
+// ===== GENERATE CAREER PATHS (Groq primary, Gemini fallback) =====
 router.post('/generate-complete-career-paths', authenticateUser, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
@@ -172,7 +172,7 @@ router.post('/generate-complete-career-paths', authenticateUser, async (req, res
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('🎯 Generating career paths with Gemini for:', user.username);
+    console.log('🎯 Generating career paths for:', user.username);
 
     const userProfile = {
       name: user.username,
@@ -192,13 +192,15 @@ router.post('/generate-complete-career-paths', authenticateUser, async (req, res
     
     const careerCategories = {
       'Mobile Development': ['mobile', 'app development', 'react native', 'flutter', 'ios', 'android'],
-      'Web Development': ['web', 'react', 'angular', 'vue', 'javascript', 'node', 'frontend', 'backend'],
-      'Data & AI': ['data', 'machine learning', 'ai', 'python', 'data science'],
+      'Web Development': ['web', 'react', 'angular', 'vue', 'javascript', 'node', 'frontend', 'backend', 'full stack'],
+      'Data & AI': ['data', 'machine learning', 'ai', 'python', 'data science', 'deep learning'],
       'Design': ['design', 'ui', 'ux', 'figma', 'creative'],
-      'Marketing': ['marketing', 'seo', 'content', 'social media', 'brand']
+      'Marketing': ['marketing', 'seo', 'content', 'social media', 'brand'],
+      'Cloud & DevOps': ['cloud', 'aws', 'azure', 'devops', 'docker', 'kubernetes'],
+      'Cybersecurity': ['security', 'cyber', 'ethical hacking', 'penetration']
     };
 
-    let primaryCategory = 'Mixed';
+    let primaryCategory = 'General Tech';
     let maxMatches = 0;
 
     for (const [category, keywords] of Object.entries(careerCategories)) {
@@ -210,72 +212,135 @@ router.post('/generate-complete-career-paths', authenticateUser, async (req, res
     }
 
     console.log(`   Category: ${primaryCategory}`);
+    console.log(`   Skills: ${userProfile.skills.slice(0, 10).join(', ') || 'None'}`);
 
-    const careerPathPrompt = `Analyze this profile and generate 5 careers.
+    const careerPathPrompt = `You are an expert career counselor. Analyze this profile and generate exactly 5 personalized career paths.
 
-Name: ${userProfile.name}
-Passion: "${userProfile.passion}"
-Category: ${primaryCategory}
-Skills: ${userProfile.skills.slice(0, 15).join(', ') || 'Beginner'}
+USER PROFILE:
+- Name: ${userProfile.name}
+- Passion: "${userProfile.passion}"
+- Status: ${userProfile.status}
+- Detected Category: ${primaryCategory}
+- Current Skills: ${userProfile.skills.slice(0, 15).join(', ') || 'Beginner - no specific skills listed'}
+- Current Role: ${userProfile.currentRole}
+- Experience: ${userProfile.yearsOfExperience} positions
 
-RULES FOR ${primaryCategory}:
-${primaryCategory === 'Mobile Development' ? 'Mobile App Dev (90%), React Native Dev (85%), Android/iOS (78%), UI/UX Mobile (70%), Full Stack Mobile (68%)' :
-  primaryCategory === 'Web Development' ? 'Full Stack Dev (90%), Frontend (85%), Backend (78%), DevOps (72%), UI/UX (68%)' :
-  primaryCategory === 'Data & AI' ? 'Data Scientist (90%), ML Engineer (85%), AI Engineer (78%), Data Analyst (72%)' :
-  'Select 5 relevant careers (70-90% match)'}
+Generate 5 career paths ranked by match percentage (highest first). Each career MUST be specific and actionable.
 
-Return ONLY JSON:
+Return ONLY valid JSON, no markdown, no code blocks:
 {
-  "topRecommendation": "Career title",
-  "personalizedMessage": "Message to ${userProfile.name}",
+  "topRecommendation": "Career title with highest match",
+  "personalizedMessage": "A warm 2-sentence message about their career journey",
   "careers": [
     {
-      "title": "Career Title",
+      "title": "Exact Career Title",
       "matchScore": 90,
       "planet": "mercury",
-      "size": 80,
-      "description": "Why this fits",
+      "size": 85,
+      "description": "Why this career fits their profile",
       "salary": "₹6-18 LPA",
       "growth": "+28%",
       "demand": "Very High",
-      "whyMatch": ["Reason 1", "Reason 2"],
-      "requiredSkills": ["Skill1", "Skill2"],
-      "skillsYouHave": ["User skill"],
-      "skillsToLearn": ["Gap1"],
-      "industryTrends": ["Trend1"],
+      "whyMatch": ["Reason 1", "Reason 2", "Reason 3"],
+      "requiredSkills": ["Skill1", "Skill2", "Skill3", "Skill4"],
+      "skillsYouHave": ["Skills they already have"],
+      "skillsToLearn": ["Gap1", "Gap2", "Gap3"],
+      "industryTrends": ["Trend1 in 2026", "Trend2", "Trend3"],
       "roadmap": [
-        {"phase": "Foundation", "duration": "3-6m", "description": "Basics", "topics": ["Topic1"]}
+        {"phase": "Foundation", "duration": "2-3 months", "description": "Getting started", "topics": ["Topic1", "Topic2", "Topic3"]},
+        {"phase": "Intermediate", "duration": "3-6 months", "description": "Building expertise", "topics": ["Topic1", "Topic2", "Topic3"]},
+        {"phase": "Advanced", "duration": "6-12 months", "description": "Mastering the field", "topics": ["Topic1", "Topic2"]}
       ],
-      "learningResources": ["Resource1"],
-      "nextSteps": ["Action1"],
+      "learningResources": ["Resource1", "Resource2", "Resource3"],
+      "nextSteps": ["Action1", "Action2", "Action3"],
       "estimatedTimeToJob": "8-12 months"
     }
   ]
-}`;
+}
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      generationConfig: {
+RULES:
+- matchScore range: 65-95 (highest first)
+- planet values: "mercury", "venus", "earth", "mars", "jupiter"
+- size values: 50-90 (bigger = higher match)
+- All content must relate to "${userProfile.passion}"
+- Use Indian Rupee (₹ LPA) for salary ranges
+- Be specific and actionable`;
+
+    let aiCareerPaths;
+
+    // Try Groq first (more reliable)
+    try {
+      console.log('   Using Groq...');
+      const groq = getGroqClient();
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert career counselor. Return only valid JSON, no markdown code blocks.'
+          },
+          { role: 'user', content: careerPathPrompt }
+        ],
+        model: 'llama-3.3-70b-versatile',
         temperature: 0.7,
-        maxOutputTokens: 16384,
-        responseMimeType: "application/json"
+        max_tokens: 4000
+      });
+
+      const responseText = completion.choices[0].message.content.trim();
+      console.log('   Groq response length:', responseText.length);
+
+      // Clean JSON from any markdown wrapping
+      const jsonText = responseText
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+
+      aiCareerPaths = JSON.parse(jsonText);
+      console.log('   ✅ Groq parsed successfully');
+
+    } catch (groqError) {
+      console.error('   ⚠️ Groq failed:', groqError.message);
+
+      // Fallback to Gemini
+      try {
+        console.log('   Trying Gemini fallback...');
+        const genAI = getGeminiClient();
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.0-flash",
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 8192,
+            responseMimeType: "application/json"
+          }
+        });
+
+        const result = await model.generateContent(careerPathPrompt);
+        const responseText = result.response.text();
+        aiCareerPaths = JSON.parse(responseText.trim());
+        console.log('   ✅ Gemini parsed successfully');
+
+      } catch (geminiError) {
+        console.error('   ❌ Gemini also failed:', geminiError.message);
+        throw new Error(`AI generation failed: Groq: ${groqError.message}, Gemini: ${geminiError.message}`);
       }
-    });
+    }
 
-    const result = await model.generateContent(careerPathPrompt);
-    const responseText = result.response.text();
-
-    let aiCareerPaths = JSON.parse(responseText.trim());
+    // Validate response structure
+    if (!aiCareerPaths?.careers || !Array.isArray(aiCareerPaths.careers) || aiCareerPaths.careers.length === 0) {
+      console.error('   ❌ Invalid career paths structure:', JSON.stringify(aiCareerPaths).substring(0, 200));
+      throw new Error('AI returned invalid career paths structure');
+    }
 
     const iconMap = {
-      'Mobile App Developer': 'Code',
-      'React Native Developer': 'Code',
-      'Full Stack Developer': 'Code',
-      'Data Scientist': 'Database',
-      'UI/UX Designer': 'Palette',
-      'DevOps Engineer': 'Shield',
-      'Product Manager': 'Briefcase'
+      'Mobile App Developer': 'Code', 'React Native Developer': 'Code',
+      'Full Stack Developer': 'Code', 'Frontend Developer': 'Code',
+      'Backend Developer': 'Code', 'Software Engineer': 'Code',
+      'Data Scientist': 'Database', 'Data Analyst': 'Database',
+      'Machine Learning Engineer': 'Database', 'AI Engineer': 'Database',
+      'UI/UX Designer': 'Palette', 'Product Designer': 'Palette',
+      'DevOps Engineer': 'Shield', 'Cloud Architect': 'Shield',
+      'Cybersecurity Specialist': 'Shield',
+      'Product Manager': 'Briefcase', 'Project Manager': 'Briefcase',
+      'Data Engineer': 'LineChart', 'Business Analyst': 'LineChart'
     };
 
     aiCareerPaths.careers = aiCareerPaths.careers.map((career, index) => ({
@@ -285,6 +350,7 @@ Return ONLY JSON:
       generatedAt: new Date()
     }));
 
+    // Save to database
     await User.findByIdAndUpdate(req.userId, {
       'aiInsights.completeCareerPaths': aiCareerPaths,
       'aiInsights.topCareerRecommendation': aiCareerPaths.topRecommendation,
@@ -293,7 +359,7 @@ Return ONLY JSON:
       updatedAt: new Date()
     });
 
-    console.log('✅ Career paths saved');
+    console.log('✅ Career paths saved:', aiCareerPaths.careers.map(c => `${c.title} (${c.matchScore}%)`).join(', '));
 
     res.json({
       success: true,
@@ -302,11 +368,11 @@ Return ONLY JSON:
     });
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    res.status(500).json({ 
+    console.error('❌ Career paths error:', error.message);
+    res.status(500).json({
       success: false,
       message: 'Failed to generate career paths',
-      error: error.message 
+      error: error.message
     });
   }
 });
