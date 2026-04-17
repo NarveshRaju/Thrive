@@ -7,7 +7,7 @@ import User from '../models/User.js';
 import { parseResume } from '../services/resumeParser.js';
 
 const router = express.Router();
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://thrive-by-codesanctum.netlify.app';
 
 console.log('🌐 Frontend URL configured as:', FRONTEND_URL);
 

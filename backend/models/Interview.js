@@ -216,7 +216,7 @@ interviewSchema.methods.calculateDuration = function() {
 };
 
 interviewSchema.methods.getJoinUrl = function() {
-  return `${process.env.FRONTEND_URL || 'http://localhost:3000'}/interview/${this.roomId}`;
+  return `${process.env.FRONTEND_URL || 'https://thrive-by-codesanctum.netlify.app'}/interview/${this.roomId}`;
 };
 
 // Pre-save hook to update timestamps

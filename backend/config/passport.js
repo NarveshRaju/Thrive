@@ -6,7 +6,7 @@ if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
   passport.use(new LinkedInStrategy({
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      callbackURL: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:3001/api/auth/linkedin/callback',
+      callbackURL: process.env.LINKEDIN_CALLBACK_URL || 'https://thrive-3r8o.onrender.com/api/auth/linkedin/callback',
       scope: ['openid', 'profile', 'email']
     },
     function(accessToken, refreshToken, profile, done) {

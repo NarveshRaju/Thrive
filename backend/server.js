@@ -16,9 +16,16 @@ import aiProfileAnalysisRoutes from './routes/ai-profile-analysis.js';
 const app = express();
 const httpServer = createServer(app);
 
+const allowedOrigins = [
+  'https://thrive-by-codesanctum.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -26,7 +33,7 @@ const io = new Server(httpServer, {
 
 // Middleware MUST come after app initialization
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
@@ -49,7 +56,7 @@ if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
   const customLinkedInStrategy = new LinkedInStrategy({
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      callbackURL: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:3001/api/auth/linkedin/callback',
+      callbackURL: process.env.LINKEDIN_CALLBACK_URL || 'https://thrive-3r8o.onrender.com/api/auth/linkedin/callback',
       // Request comprehensive permissions
       scope: [
         'openid',
