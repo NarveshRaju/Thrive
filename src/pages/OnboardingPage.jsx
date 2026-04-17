@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://thrive-3r8o.onrender.com/api';
 
 const OnboardingPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://thrive-3r8o.onrender.com/api';
 
 export const useInterview = (roomId) => {
   const [interview, setInterview] = useState(null);

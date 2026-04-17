@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Code, MessageCircle, Users, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://thrive-3r8o.onrender.com/api';
 
 const InterviewModal = ({ onClose, userData }) => {
   const navigate = useNavigate();

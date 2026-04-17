@@ -12,7 +12,7 @@ import {
 import DashboardNavbar from '../components/layout/DashboardNavbar';
 import '../styles/CareerPathRecommender.css';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://thrive-3r8o.onrender.com/api';
 
 const iconComponents = {
   Code, Database, Palette, Shield, Briefcase, LineChart

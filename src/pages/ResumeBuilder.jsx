@@ -7,7 +7,7 @@ import {
   X, Eye, Save, Target, CheckCircle, AlertCircle, RefreshCw
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://thrive-3r8o.onrender.com/api';
 
 const ResumeBuilder = () => {
   const navigate = useNavigate();

@@ -14,7 +14,7 @@ export const ProtectedRoute = ({ children }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/api/auth/verify', {
+        const response = await fetch('https://thrive-3r8o.onrender.com/api/auth/verify', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
