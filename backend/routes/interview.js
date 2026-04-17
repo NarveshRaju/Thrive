@@ -27,7 +27,7 @@ const authenticateUser = (req, res, next) => {
 // Create new interview room
 router.post('/create-room', authenticateUser, async (req, res) => {
   try {
-    const { candidateName, interviewType, difficulty } = req.body;
+    const { candidateName, interviewType, difficulty, targetRole, industry, focusAreas } = req.body;
     
     const user = await User.findById(req.userId);
     if (!user) {
@@ -41,9 +41,12 @@ router.post('/create-room', authenticateUser, async (req, res) => {
       userId: req.userId,
       roomId,
       candidateName: candidateName || user.username,
-      interviewType: interviewType || 'technical',
+      interviewType: interviewType || 'role-specific',
       difficulty: difficulty || 'medium',
       status: 'scheduled',
+      targetRole: targetRole || '',
+      industry: industry || '',
+      focusAreas: focusAreas || '',
       participants: [{
         userId: req.userId,
         role: 'candidate',

@@ -21,14 +21,19 @@ const interviewSchema = new mongoose.Schema({
   // Interview Configuration
   interviewType: {
     type: String,
-    enum: ['technical', 'coding', 'behavioral', 'system-design', 'general'],
-    default: 'technical'
+    enum: ['technical', 'coding', 'behavioral', 'system-design', 'general', 'role-specific', 'case-study', 'hr-cultural'],
+    default: 'role-specific'
   },
   difficulty: {
     type: String,
     enum: ['easy', 'medium', 'hard'],
     default: 'medium'
   },
+  
+  // Personalization
+  targetRole: { type: String, default: '' },
+  industry: { type: String, default: '' },
+  focusAreas: { type: String, default: '' },
   
   // Status & Timing
   status: {
